@@ -1,3 +1,4 @@
 node_modules/
 .claude/
 chat-to-code-handoff/
+github_config.json
