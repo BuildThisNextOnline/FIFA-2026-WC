@@ -313,9 +313,7 @@ function oddsBarHtml(pred, played = false) {
   const dp = Math.round(draw * 100);
   const ap = Math.round(away * 100);
   const { lambdaA, lambdaB, best } = pred;
-  const label = played ? `<div class="pred-label">Pre-match</div>` : "";
   return `<div class="fx-pred">
-    ${label}
     <div class="odds-bar">
       <div class="odds-seg odds-home" style="flex:${home}" title="Home win ${hp}%"><span>${hp}%</span></div>
       <div class="odds-seg odds-draw" style="flex:${draw}" title="Draw ${dp}%"><span>${dp}%</span></div>
