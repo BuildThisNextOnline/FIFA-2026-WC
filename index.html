@@ -632,17 +632,20 @@ function buildPredictedDraw(allMatches, params) {
     return null;
   }
 
+  // Keep m.home/m.away as original placeholders (needed by resolveW in renderBracketDraw).
+  // Store resolved display names in m._home/_away instead.
   for (const round of ["R32","R16","QF","SF","Final"]) {
     for (const m of work.filter(m => m.group === round)) {
-      const teamA = resolveName(m.home, m.id) || m.home;
-      const teamB = resolveName(m.away, m.id) || m.away;
-      m.home = teamA;
-      m.away = teamB;
+      const teamA = resolveName(m.home, m.id) || null;
+      const teamB = resolveName(m.away, m.id) || null;
+      m._home = teamA;
+      m._away = teamB;
       if (m.score) {
         const hs = m.score.et_home ?? m.score.ft_home;
         const as = m.score.et_away ?? m.score.ft_away;
-        winners[m.id] = m.score.pen_winner || (hs > as ? teamA : teamB);
-      } else if (teamA && teamB && !/^[0-9WL3]/.test(teamA) && !/^[0-9WL3]/.test(teamB)) {
+        const winner = m.score.pen_winner || (hs > as ? (teamA || m.home) : (teamB || m.away));
+        winners[m.id] = winner;
+      } else if (teamA && teamB) {
         const pred = predictMatch({ ...m, home: teamA, away: teamB }, params);
         if (pred) {
           m.score = { ft_home: pred.best.homeGoals, ft_away: pred.best.awayGoals, et_home: null, et_away: null, pen_winner: null };
@@ -807,12 +810,12 @@ function renderBracketDraw(allMatches, params) {
     const played = !!m.score;
     const [hw, aw] = matchWinner(m);
 
-    // Slots
+    // Slots — use _home/_away (resolved team names) when available (prediction mode)
     const pred = !!m._predicted;
     const scoreA = played ? (pred ? `~${m.score.ft_home}` : m.score.ft_home) : null;
     const scoreB = played ? (pred ? `~${m.score.ft_away}` : m.score.ft_away) : null;
-    out += slot(x, y1, m.home, scoreA, hw, pred);
-    out += slot(x, y2, m.away, scoreB, aw, pred);
+    out += slot(x, y1, m._home || m.home, scoreA, hw, pred);
+    out += slot(x, y2, m._away || m.away, scoreB, aw, pred);
 
     // Connecting lines to children (drawn from parent)
     if (top || bot) {
@@ -849,8 +852,8 @@ function renderBracketDraw(allMatches, params) {
   const fp = !!finalM.score;
   const [fhw, faw] = matchWinner(finalM);
   const fp_pred = !!finalM._predicted;
-  svg += slot(FINAL_X, fy1, finalM.home, fp ? (fp_pred ? `~${finalM.score.ft_home}` : finalM.score.ft_home) : null, fhw, fp_pred);
-  svg += slot(FINAL_X, fy2, finalM.away, fp ? (fp_pred ? `~${finalM.score.ft_away}` : finalM.score.ft_away) : null, faw, fp_pred);
+  svg += slot(FINAL_X, fy1, finalM._home || finalM.home, fp ? (fp_pred ? `~${finalM.score.ft_home}` : finalM.score.ft_home) : null, fhw, fp_pred);
+  svg += slot(FINAL_X, fy2, finalM._away || finalM.away, fp ? (fp_pred ? `~${finalM.score.ft_away}` : finalM.score.ft_away) : null, faw, fp_pred);
 
   // Lines from SF to Final
   if (leftRoot) {
