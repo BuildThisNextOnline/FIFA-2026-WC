@@ -336,26 +336,46 @@ main { padding: 24px; max-width: 1400px; margin: 0 auto; }
   text-transform: uppercase;
   letter-spacing: .08em;
   color: var(--text-muted);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
-.sliders-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 10px 24px;
-}
-
-.slider-row {
+.sliders-stack {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 18px;
 }
 
-.slider-lbl {
+.sparam {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sparam-hdr {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sparam-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sparam-val {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-light);
+  white-space: nowrap;
+}
+
+.sparam-desc {
   font-size: 12px;
   color: var(--text-muted);
-  min-width: 130px;
-  cursor: help;
+  line-height: 1.5;
 }
 
 .pred-label {
@@ -368,18 +388,11 @@ main { padding: 24px; max-width: 1400px; margin: 0 auto; }
 }
 
 .slider-input {
-  flex: 1;
+  width: 100%;
   accent-color: var(--accent);
   cursor: pointer;
   height: 4px;
-}
-
-.slider-val {
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-  min-width: 44px;
-  text-align: right;
+  margin-top: 2px;
 }
 
 /* Round tabs (bracket view) */

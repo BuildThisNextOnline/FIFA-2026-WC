@@ -58,34 +58,55 @@
     <!-- ── Sliders ───────────────────────────────────────────────────────── -->
     <div class="sliders-panel">
       <div class="sliders-title">Model Parameters</div>
-      <div class="sliders-grid">
-        <div class="slider-row">
-          <label class="slider-lbl" title="Extra scoring boost for Mexico, USA, or Canada when playing at home. Default 0.30 means host teams score ~35% more goals on average. Slide to 0 if you think home advantage doesn't matter; slide up if you think it's decisive.">Home advantage</label>
-          <input type="range" class="slider-input" data-param="gamma"     min="0"    max="0.60" step="0.05" value="0.30">
-          <span  class="slider-val" data-for="gamma">0.30</span>
+      <div class="sliders-stack">
+
+        <div class="sparam">
+          <div class="sparam-hdr">
+            <span class="sparam-name">Home advantage</span>
+            <span class="sparam-val" data-for="gamma">0.30</span>
+          </div>
+          <div class="sparam-desc">Extra scoring boost for Mexico, USA, or Canada when playing on home soil. At 0.30, host teams score about 35% more goals on average. Slide to 0 if you think home advantage doesn't matter; slide up if you think it's decisive.</div>
+          <input type="range" class="slider-input" data-param="gamma" min="0" max="0.60" step="0.05" value="0.30">
         </div>
-        <div class="slider-row">
-          <label class="slider-lbl" title="Boosts the probability of 0-0 and 1-1 draws, correcting a known flaw in the basic goal model (it predicts too few draws). More negative = more draws. Set to 0 to use raw Poisson.">Low-score boost</label>
-          <input type="range" class="slider-input" data-param="tau"       min="-0.30" max="0"   step="0.05" value="-0.10">
-          <span  class="slider-val" data-for="tau">-0.10</span>
+
+        <div class="sparam">
+          <div class="sparam-hdr">
+            <span class="sparam-name">Low-score boost</span>
+            <span class="sparam-val" data-for="tau">-0.10</span>
+          </div>
+          <div class="sparam-desc">Increases the chance of 0–0 and 1–1 draws. The basic goal model predicts too few draws, so this corrects it. At −0.10 (the default), draws are modestly more likely. More negative = more draws. Set to 0 to use the raw model with no correction.</div>
+          <input type="range" class="slider-input" data-param="tau" min="-0.30" max="0" step="0.05" value="-0.10">
         </div>
-        <div class="slider-row">
-          <label class="slider-lbl" title="Benefit to a team with more recovery days since their last match (capped at 5 days difference). Increase if you believe fatigue matters more.">Rest advantage</label>
-          <input type="range" class="slider-input" data-param="delta"     min="0"    max="0.15" step="0.01" value="0.06">
-          <span  class="slider-val" data-for="delta">0.06</span>
+
+        <div class="sparam">
+          <div class="sparam-hdr">
+            <span class="sparam-name">Rest advantage</span>
+            <span class="sparam-val" data-for="delta">0.06</span>
+          </div>
+          <div class="sparam-desc">Each extra day of rest adds this value to a team's log expected goals (capped at 5 days difference). At 0.06 per day, a team with 5 more rest days scores about 35% more goals. Slide up if you think recovery time matters more.</div>
+          <input type="range" class="slider-input" data-param="delta" min="0" max="0.15" step="0.01" value="0.06">
         </div>
-        <div class="slider-row">
-          <label class="slider-lbl" title="Penalty applied to teams whose previous match went to extra time or penalties (120 min of play). Increase if you think playing extra time has a big effect on the next match.">Extra-time fatigue</label>
-          <input type="range" class="slider-input" data-param="etPenalty" min="0"    max="0.30" step="0.05" value="0.10">
-          <span  class="slider-val" data-for="etPenalty">0.10</span>
+
+        <div class="sparam">
+          <div class="sparam-hdr">
+            <span class="sparam-name">Extra-time fatigue</span>
+            <span class="sparam-val" data-for="etPenalty">0.10</span>
+          </div>
+          <div class="sparam-desc">A flat penalty applied to any team whose previous match went to extra time or penalties. At 0.10, that team scores about 10% fewer goals in their next match. Slide up if you think playing 120 minutes takes a bigger toll.</div>
+          <input type="range" class="slider-input" data-param="etPenalty" min="0" max="0.30" step="0.05" value="0.10">
         </div>
-        <div class="slider-row">
-          <label class="slider-lbl" title="Number of full tournament simulations run. Higher = more accurate probabilities but slower. 10,000 is a good balance; use 50,000 for publication-quality numbers.">Simulations</label>
-          <input type="range" class="slider-input" data-param="N"         min="1000" max="50000" step="1000" value="10000">
-          <span  class="slider-val" data-for="N">10 000</span>
+
+        <div class="sparam">
+          <div class="sparam-hdr">
+            <span class="sparam-name">Simulations</span>
+            <span class="sparam-val" data-for="N">10 000</span>
+          </div>
+          <div class="sparam-desc">Number of full tournament simulations run. More simulations = more accurate probabilities but slower. 10,000 is a good balance; use 50,000 for the most precise numbers.</div>
+          <input type="range" class="slider-input" data-param="N" min="1000" max="50000" step="1000" value="10000">
         </div>
+
       </div>
-      <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+      <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
         <button class="btn primary" id="rerunBtn">↻ Re-run</button>
         <span id="simStatus" style="color:var(--text-muted);font-size:11px"></span>
       </div>
@@ -544,7 +565,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 
 // Sliders — update displayed value in real time
 document.querySelectorAll(".slider-input").forEach(input => {
-  const valEl = document.querySelector(`.slider-val[data-for="${input.dataset.param}"]`);
+  const valEl = document.querySelector(`.sparam-val[data-for="${input.dataset.param}"]`);
   input.addEventListener("input", () => {
     if (!valEl) return;
     const v = parseFloat(input.value);
