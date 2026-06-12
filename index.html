@@ -30,7 +30,7 @@
       <div class="sliders-panel">
         <div class="sliders-title">Model Parameters</div>
 
-        <div class="param-section-label">Affects bracket &amp; fixture predictions</div>
+        <div class="param-section-label">Fixtures tab — updates match predictions</div>
         <div class="sliders-stack">
 
           <div class="sparam">
@@ -41,20 +41,6 @@
               <span class="sparam-val" data-for="gamma">+35% more goals</span>
             </div>
           </div>
-
-          <div class="sparam">
-            <span class="sparam-name">Simulations</span>
-            <span class="sparam-desc">More runs = more precise bracket %. 10k is fast; 50k is most accurate.</span>
-            <div class="sparam-ctrl">
-              <input type="range" class="slider-input" data-param="N" min="1000" max="50000" step="1000" value="10000">
-              <span class="sparam-val" data-for="N">10 000</span>
-            </div>
-          </div>
-
-        </div>
-
-        <div class="param-section-label" style="margin-top:14px">Affects fixture predictions only</div>
-        <div class="sliders-stack">
 
           <div class="sparam">
             <span class="sparam-name">Draw correction</span>
@@ -84,6 +70,20 @@
           </div>
 
         </div>
+
+        <div class="param-section-label" style="margin-top:14px">Knockout Odds tab — updates bracket simulation</div>
+        <div class="sliders-stack">
+
+          <div class="sparam">
+            <span class="sparam-name">Simulations</span>
+            <span class="sparam-desc">More runs = more precise knockout %. 10k is fast; 50k is most accurate.</span>
+            <div class="sparam-ctrl">
+              <input type="range" class="slider-input" data-param="N" min="1000" max="50000" step="1000" value="10000">
+              <span class="sparam-val" data-for="N">10 000</span>
+            </div>
+          </div>
+
+        </div>
         <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
           <button class="btn primary" id="rerunBtn">↻ Re-run</button>
           <span id="simStatus" style="color:var(--text-muted);font-size:11px"></span>
@@ -97,8 +97,8 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="fixtures">Fixtures</button>
     <button class="tab-btn" data-tab="standings">Standings</button>
-    <button class="tab-btn" data-tab="draw">Draw</button>
-    <button class="tab-btn" data-tab="bracket">Bracket</button>
+    <button class="tab-btn" data-tab="bracket">Knockout Odds</button>
+    <button class="tab-btn" data-tab="draw">Tournament Draw</button>
   </div>
 
   <div id="tab-fixtures">
@@ -284,13 +284,14 @@ function detectHostTeam(homeTeam, awayTeam, venue) {
   return null; // host nations match not hosted in their own country, or non-host team
 }
 
-function predictMatch(m) {
+function predictMatch(m, params = {}) {
   if (!_ratings || !_ratings[m.home] || !_ratings[m.away]) return null;
   try {
     const hostTeam = detectHostTeam(m.home, m.away, m.venue);
     const ctx = hostTeam ? { homeTeam: hostTeam } : {};
-    const { lambdaA, lambdaB } = expectedGoals(m.home, m.away, _ratings, {}, ctx);
-    const matrix = scorelineMatrix(lambdaA, lambdaB);
+    const mergedParams = { ...MODEL_DEFAULTS, ...params };
+    const { lambdaA, lambdaB } = expectedGoals(m.home, m.away, _ratings, mergedParams, ctx);
+    const matrix = scorelineMatrix(lambdaA, lambdaB, mergedParams.tau);
     const odds = matchOdds(matrix);
     const best = mostLikelyScore(matrix);
     return { lambdaA, lambdaB, odds, best };
@@ -326,7 +327,7 @@ function formatDate(isoStr) {
   } catch { return isoStr; }
 }
 
-function renderFixtures(matches) {
+function renderFixtures(matches, params = {}) {
   errorBanner.style.display = "none";
   const filtered = matches.filter(m => {
     if (activeFilter === "played")   return m.score !== null;
@@ -364,7 +365,7 @@ function renderFixtures(matches) {
     html += `<div class="section-title">${label}</div><div class="fixture-grid">`;
     for (const m of byGroup[key]) {
       const played = m.score !== null;
-      const pred   = predictMatch(m);
+      const pred   = predictMatch(m, params);
       const scoreHtml = played
         ? `<div class="score-value">${m.score.ft_home} – ${m.score.ft_away}</div>`
         : `<div class="score-dash">vs</div>`;
@@ -782,7 +783,7 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
     document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     activeFilter = btn.dataset.filter;
-    try { renderFixtures(getAllMatches()); } catch { /* not loaded yet */ }
+    try { renderFixtures(getAllMatches(), getSliderParams()); } catch { /* not loaded yet */ }
   });
 });
 
@@ -836,9 +837,10 @@ function getSliderN() {
 document.getElementById("rerunBtn")?.addEventListener("click", () => {
   try {
     const all = getAllMatches();
-    renderFixtures(all);
+    const p = getSliderParams();
+    renderFixtures(all, p);
     renderBracketDraw(all);
-    runMonteCarlo(all, getSliderParams(), getSliderN());
+    runMonteCarlo(all, p, getSliderN());
   } catch { /* data not loaded yet */ }
 });
 
