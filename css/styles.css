@@ -24,72 +24,149 @@ body {
   line-height: 1.5;
 }
 
+/* ── Header: 3-column full-width sticky bar ── */
 header {
   background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 16px 24px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  border-bottom: 2px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: grid;
+  grid-template-columns: 15% 15% 70%;
+  min-height: 90px;
+  align-items: stretch;
 }
 
-header h1 { font-size: 18px; font-weight: 700; }
-header .subtitle { color: var(--text-muted); font-size: 12px; }
-
-.status-bar {
-  font-size: 11px;
+.hdr-brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px 16px 12px 24px;
+  border-right: 1px solid var(--border);
+}
+.hdr-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.3;
+}
+.hdr-meta {
+  font-size: 10px;
   color: var(--text-muted);
-  padding: 8px 24px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  margin-top: 4px;
+}
+.hdr-status {
   display: flex;
-  gap: 16px;
   align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  font-size: 10px;
+  color: var(--text-muted);
 }
 
-.status-bar .dot {
+/* Mode toggle buttons (CURRENT / PREDICTION) */
+.hdr-mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0;
+  width: 100%;
+  transition: background 0.15s, color 0.15s;
+}
+.hdr-mode-btn:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+.hdr-mode-btn.active { background: var(--accent); color: #fff; }
+
+/* 70% right column: PREDICTION button + parameters */
+.hdr-pred {
+  display: grid;
+  grid-template-columns: 21.43% 1fr;
+  align-items: stretch;
+}
+.hdr-pred > .hdr-mode-btn { border-right: 1px solid var(--border); }
+
+/* 5 parameters panel */
+.hdr-params {
+  display: flex;
+  align-items: stretch;
+}
+.hdr-param {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 10px 8px;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+.hdr-param:last-child { border-right: none; padding-right: 20px; }
+
+.hparam-name {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hparam-desc {
+  font-size: 9px;
+  color: var(--text-muted);
+  line-height: 1.3;
+  margin: 3px 0 4px;
+  flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+.hdr-param .slider-input {
+  width: 100%;
+  margin: 2px 0;
+  cursor: pointer;
+}
+.hparam-ticks {
+  position: relative;
+  height: 14px;
+  margin-top: 2px;
+}
+.hparam-ticks span {
+  position: absolute;
+  font-size: 8px;
+  color: var(--text-muted);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.hparam-rerun {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.hparam-rerun .btn { font-size: 9px; padding: 2px 8px; }
+.hparam-rerun #simStatus { font-size: 9px; color: var(--text-muted); }
+
+/* Status dot (inside .hdr-status) */
+.dot {
   width: 6px; height: 6px;
   border-radius: 50%;
   background: var(--win);
   display: inline-block;
+  flex-shrink: 0;
 }
-
-.status-bar .dot.loading { background: var(--draw); animation: pulse 1s infinite; }
-.status-bar .dot.error { background: var(--loss); }
+.dot.loading { background: var(--draw); animation: pulse 1s infinite; }
+.dot.error   { background: var(--loss); }
 
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-main { padding: 24px; max-width: 1400px; margin: 0 auto; }
-
-.page-layout {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 24px;
-  align-items: start;
-}
-
-.sidebar .sliders-panel {
-  position: sticky;
-  top: 16px;
-  margin-bottom: 0;
-}
-
-.sidebar .sparam {
-  grid-template-columns: 1fr;
-  gap: 6px 0;
-}
-
-.sidebar .sparam-ctrl {
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-}
-
-.sidebar .sparam-val {
-  min-width: 90px;
-  text-align: right;
-  flex-shrink: 0;
-}
+main { padding: 0 24px 24px; max-width: 1400px; margin: 0 auto; }
 
 .controls {
   display: flex;
@@ -304,20 +381,29 @@ main { padding: 24px; max-width: 1400px; margin: 0 auto; }
   font-size: 14px;
 }
 
-/* Tabs */
-.tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+/* Tabs (full-width bar inside main, flush top) */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin: 0 -24px 20px;
+  padding: 0 24px;
+  background: var(--surface);
+}
 .tab-btn {
-  padding: 8px 16px;
+  padding: 12px 20px;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 600;
   margin-bottom: -1px;
   transition: color .15s, border-color .15s;
 }
-.tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+.tab-btn:hover:not(.active) { color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
 /* Odds bar (upcoming match predictions) */
 .odds-bar {
@@ -673,49 +759,18 @@ main { padding: 24px; max-width: 1400px; margin: 0 auto; }
   .sidebar .sliders-panel { position: static; }
 }
 
-@media (max-width: 640px) {
-  main { padding: 12px; }
+@media (max-width: 900px) {
+  header { grid-template-columns: 1fr; min-height: auto; }
+  .hdr-pred { grid-template-columns: 1fr; }
+  .hdr-params { flex-wrap: wrap; }
+  .hdr-param { min-width: 140px; }
+  main { padding: 0 12px 16px; }
+  .tabs { margin: 0 -12px 16px; padding: 0 12px; }
   .fixture-grid-5 { grid-template-columns: 48px repeat(2, 1fr); }
   .standings-grid { grid-template-columns: 1fr; }
-  header { padding: 12px 16px; }
   .lb-row { grid-template-columns: 28px 1fr 44px 80px 44px; }
 }
 
-/* Current / Prediction view toggle */
-.view-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.view-toggle-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--text-muted);
-}
-
-.view-btn {
-  padding: 5px 14px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background .15s, color .15s, border-color .15s;
-}
-
-.view-btn:hover {
-  border-color: var(--accent-light);
-  color: var(--text);
-}
-
-.view-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
+/* view-toggle div no longer rendered — keep .view-btn for JS compat */
+.view-toggle { display: none; }
+.view-btn { /* base — hdr-mode-btn overrides in header */ }
