@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "id": "A_0",
+    "group": "A",
+    "home": "Mexico",
+    "away": "South Africa",
+    "date": "2026-06-11",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
+    "id": "A_1",
+    "group": "A",
+    "home": "South Korea",
+    "away": "Czech Republic",
+    "date": "2026-06-11",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  }
+]
