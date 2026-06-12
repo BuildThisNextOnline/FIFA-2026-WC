@@ -71,7 +71,7 @@
 
         </div>
 
-        <div class="param-section-label" style="margin-top:14px">Knockout Odds tab — updates bracket simulation</div>
+        <div class="param-section-label" style="margin-top:14px">Stage Probabilities tab — updates bracket simulation</div>
         <div class="sliders-stack">
 
           <div class="sparam">
@@ -97,7 +97,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="fixtures">Fixtures</button>
     <button class="tab-btn" data-tab="standings">Standings</button>
-    <button class="tab-btn" data-tab="bracket">Knockout Odds</button>
+    <button class="tab-btn" data-tab="bracket">Stage Probabilities</button>
     <button class="tab-btn" data-tab="draw">Tournament Draw</button>
   </div>
 
@@ -492,6 +492,8 @@ const ROUND_LABELS_BRACKET = {
   r32:      "Qualify from group",
 };
 
+const ROUND_CUTOFF = { champion: 1, final: 2, sf: 4, qf: 8, r16: 16, r32: 32 };
+
 function renderBracket() {
   const el = document.getElementById("bracketContent");
   if (!el) return;
@@ -501,30 +503,29 @@ function renderBracket() {
     return;
   }
 
-  const round = document.querySelector(".round-tab.active")?.dataset.round || "champion";
-  const label = ROUND_LABELS_BRACKET[round] || round;
+  const round   = document.querySelector(".round-tab.active")?.dataset.round || "champion";
+  const label   = ROUND_LABELS_BRACKET[round] || round;
+  const cutoff  = ROUND_CUTOFF[round] ?? 0;
 
   const entries = Object.entries(_simResult.teams)
     .map(([name, probs]) => ({ name, prob: probs[round] ?? 0 }))
     .sort((a, b) => b.prob - a.prob);
 
   const maxProb = entries[0]?.prob || 1;
+  const half    = Math.ceil(entries.length / 2);
 
   let html = `<div class="lb-header">P(${label}) · ${_simResult.N.toLocaleString()} simulations</div>`;
 
-  const half = Math.ceil(entries.length / 2);
-  const left  = entries.slice(0, half);
-  const right = entries.slice(half);
-
   function rowHtml({ name, prob }, i, offset) {
-    const pct = prob >= 0.001
+    const rank      = i + 1 + offset;
+    const qualified = rank <= cutoff;
+    const pct       = prob >= 0.001
       ? (prob * 100).toFixed(prob >= 0.099 ? 1 : 2) + "%"
       : "<0.1%";
     const barPct = (prob / maxProb * 100).toFixed(2);
     const grp    = _teamGroups[name] || "?";
-    const rank   = i + 1 + offset;
     const podium = rank === 1 ? "lb-gold" : rank === 2 ? "lb-silver" : rank === 3 ? "lb-bronze" : "";
-    return `<div class="lb-row">
+    return `<div class="lb-row${qualified ? " lb-qualified" : "lb-below"}">
       <span class="lb-rank ${podium}">${rank}</span>
       <div class="lb-team">${flagImg(name)}<span class="lb-name">${name}</span></div>
       <span class="lb-grp">Grp ${grp}</span>
@@ -533,9 +534,21 @@ function renderBracket() {
     </div>`;
   }
 
+  function colHtml(slice, offset) {
+    const cutoffInCol = cutoff - offset;
+    let out = "";
+    slice.forEach((e, i) => {
+      out += rowHtml(e, i, offset);
+      if (i + 1 === cutoffInCol && cutoffInCol > 0 && cutoffInCol < slice.length) {
+        out += `<div class="lb-cutoff-line">▲ likely qualifies</div>`;
+      }
+    });
+    return out;
+  }
+
   html += `<div class="leaderboard">`;
-  html += `<div class="lb-col">${left.map((e, i) => rowHtml(e, i, 0)).join("")}</div>`;
-  html += `<div class="lb-col">${right.map((e, i) => rowHtml(e, i, half)).join("")}</div>`;
+  html += `<div class="lb-col">${colHtml(entries.slice(0, half), 0)}</div>`;
+  html += `<div class="lb-col">${colHtml(entries.slice(half), half)}</div>`;
   html += `</div>`;
   el.innerHTML = html;
 }
