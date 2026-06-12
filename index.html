@@ -62,37 +62,37 @@
 
         <div class="sparam">
           <span class="sparam-name">Home advantage</span>
-          <span class="sparam-desc">Host nations (Mexico, USA, Canada) get a scoring boost at their own venues. At 30%, hosts score about 35% more goals on average. Set to 0% if you think playing at home makes no difference.</span>
+          <span class="sparam-desc">Host nations (Mexico, USA, Canada) score more goals when playing at home. The recommended +35% matches historical tournament data. Slide up if you think the home crowd will be unusually decisive this year; slide down toward 0% if you think it won't matter.</span>
           <div class="sparam-ctrl">
             <input type="range" class="slider-input" data-param="gamma" min="0" max="0.60" step="0.05" value="0.30">
-            <span class="sparam-val" data-for="gamma">30%</span>
+            <span class="sparam-val" data-for="gamma">+35% more goals</span>
           </div>
         </div>
 
         <div class="sparam">
-          <span class="sparam-name">Low-score boost</span>
-          <span class="sparam-desc">Increases the chance of 0–0 and 1–1 draws. The basic goal model predicts too few draws; this corrects it. At −10%, draws are modestly more likely. More negative = more draws. Set to 0% for no correction.</span>
+          <span class="sparam-name">Draw correction</span>
+          <span class="sparam-desc">In recent World Cups, roughly 1 in 4 group stage matches ends in a draw — but the raw goal model predicts too few. This slider adds draws back. The recommended −10% is calibrated to match historical draw rates. Leave it here unless you think this tournament will be unusually decisive (slide toward 0%) or unusually cautious and tactical (slide toward −30%).</span>
           <div class="sparam-ctrl">
             <input type="range" class="slider-input" data-param="tau" min="-0.30" max="0" step="0.05" value="-0.10">
-            <span class="sparam-val" data-for="tau">-10%</span>
+            <span class="sparam-val" data-for="tau">−10%</span>
           </div>
         </div>
 
         <div class="sparam">
           <span class="sparam-name">Rest advantage</span>
-          <span class="sparam-desc">Boost per extra rest day (capped at 5 days). At 6% per day: a team with 3 extra rest days scores ~20% more goals; a team with 5 extra days scores ~35% more. Set to 0% if you think recovery time doesn't matter.</span>
+          <span class="sparam-desc">How much extra rest days benefit a team (capped at 5 days). At the recommended setting, a team with 5+ more rest days scores ~35% more goals; a 3-day gap gives ~20%; a 2-day gap gives ~13%. Slide up if you think fixture congestion will be a decisive factor; slide to 0% if you think rest makes no difference.</span>
           <div class="sparam-ctrl">
             <input type="range" class="slider-input" data-param="delta" min="0" max="0.15" step="0.01" value="0.06">
-            <span class="sparam-val" data-for="delta">6%</span>
+            <span class="sparam-val" data-for="delta">35% at 5 days</span>
           </div>
         </div>
 
         <div class="sparam">
           <span class="sparam-name">Extra-time fatigue</span>
-          <span class="sparam-desc">Teams that played extra time in their previous match score this many % fewer goals. At 10%, a tired team scores about 10% fewer goals. Set to 0% if you think 120 minutes of play has no lasting effect.</span>
+          <span class="sparam-desc">Teams coming off a 120-minute match (extra time + possible penalties) score fewer goals next time. At the recommended −10%, their attacking output drops by 10%. Set to 0% if you think professionals recover fully regardless; slide toward −30% if you think a 120-minute match takes a severe toll.</span>
           <div class="sparam-ctrl">
             <input type="range" class="slider-input" data-param="etPenalty" min="0" max="0.30" step="0.05" value="0.10">
-            <span class="sparam-val" data-for="etPenalty">10%</span>
+            <span class="sparam-val" data-for="etPenalty">−10% goals</span>
           </div>
         </div>
 
@@ -564,17 +564,20 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 });
 
 // Sliders — update displayed value in real time
+function formatParamVal(param, v) {
+  if (param === "N")         return v.toLocaleString();
+  if (param === "gamma")     return "+" + Math.round((Math.exp(v) - 1) * 100) + "% more goals";
+  if (param === "delta")     return Math.round((Math.exp(v * 5) - 1) * 100) + "% at 5 days";
+  if (param === "etPenalty") return "−" + Math.round((Math.exp(v) - 1) * 100) + "% goals";
+  if (param === "tau")       return "−" + Math.round(Math.abs(v) * 100) + "%";
+  return Math.round(v * 100) + "%";
+}
+
 document.querySelectorAll(".slider-input").forEach(input => {
   const valEl = document.querySelector(`.sparam-val[data-for="${input.dataset.param}"]`);
   input.addEventListener("input", () => {
     if (!valEl) return;
-    const v = parseFloat(input.value);
-    if (input.dataset.param === "N") {
-      valEl.textContent = v.toLocaleString();
-    } else {
-      const pct = Math.round(v * 100);
-      valEl.textContent = pct + "%";
-    }
+    valEl.textContent = formatParamVal(input.dataset.param, parseFloat(input.value));
   });
 });
 
