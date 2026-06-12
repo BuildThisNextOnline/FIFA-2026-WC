@@ -460,19 +460,21 @@ function renderStandings(allMatches) {
           <th title="Played">P</th><th title="Won">W</th>
           <th title="Drawn">D</th><th title="Lost">L</th>
           <th title="Goal Difference">GD</th><th title="Points">Pts</th>
-          <th class="st-champ" title="Champion probability (Monte Carlo)">W%</th>
         </tr></thead><tbody>`;
 
+      // Only highlight qualifiers once matches have been played (or in prediction mode)
+      const hasMatchData = viewMode === "prediction" || ranked.some(s => s.played > 0);
       ranked.forEach((s, i) => {
         const pos = i + 1;
-        const cls = pos <= 2 ? "st-qualify" : pos === 3 ? "st-third" : "st-elim";
+        const cls = hasMatchData && pos <= 2 ? "st-qualify"
+                  : hasMatchData && pos === 3 ? "st-third"
+                  : "st-elim";
         const gd  = (s.gd > 0 ? "+" : "") + s.gd;
         html += `<tr class="${cls}">
           <td class="st-pos">${pos}</td>
           <td class="st-team"><div class="st-team-inner">${flagImg(s.team, true)}<span>${s.team}</span></div></td>
           <td>${s.played}</td><td>${s.won}</td><td>${s.drawn}</td><td>${s.lost}</td>
           <td>${gd}</td><td class="st-pts">${s.points}</td>
-          ${champPctHtml(s.team)}
         </tr>`;
       });
 
