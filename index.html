@@ -348,7 +348,7 @@ function renderFixtures(matches, params = {}) {
     return;
   }
 
-  // Sort chronologically; within the same date keep original feed order
+  // Sort chronologically
   const sorted = [...filtered].sort((a, b) => {
     if (!a.date && !b.date) return 0;
     if (!a.date) return 1;
@@ -356,7 +356,7 @@ function renderFixtures(matches, params = {}) {
     return a.date.localeCompare(b.date);
   });
 
-  let html = `<div class="fixture-list">`;
+  let html = `<div class="fixture-grid-4">`;
   let lastDateKey = null;
 
   for (const m of sorted) {
@@ -364,42 +364,33 @@ function renderFixtures(matches, params = {}) {
     if (dateKey !== lastDateKey) {
       const hdr = dateKey
         ? new Date(dateKey + "T12:00:00").toLocaleDateString("en-US",
-            { weekday: "long", month: "short", day: "numeric" })
-        : "Date TBD";
-      html += `<div class="fx-date-hdr">${hdr}</div>`;
+            { weekday: "short", month: "short", day: "numeric" })
+        : "TBD";
+      html += `<div class="fx-date-sep">${hdr}</div>`;
       lastDateKey = dateKey;
     }
 
     const played   = m.score !== null;
     const pred     = predictMatch(m, params);
     const showPred = pred && viewMode === "prediction";
-    const groupLabel = /^[A-L]$/.test(m.group) ? `Group ${m.group}` : (m.group || "");
 
-    const etNote = played && m.score.et_home != null
-      ? ` <span style="font-size:9px;opacity:.7">AET ${m.score.et_home}–${m.score.et_away}</span>` : "";
+    const scoreText = played
+      ? `${m.score.ft_home}–${m.score.ft_away}`
+      : `vs`;
 
-    const scoreHtml = played
-      ? `<div class="score-value">${m.score.ft_home} – ${m.score.ft_away}${etNote}</div>`
-      : `<div class="score-dash">vs</div>`;
+    const oddsHtml = showPred ? `
+      <span class="fx-odds">
+        <span class="fx-h">${Math.round(pred.odds.home * 100)}%</span><span class="fx-d">${Math.round(pred.odds.draw * 100)}%</span><span class="fx-a">${Math.round(pred.odds.away * 100)}%</span>
+      </span>
+      <span class="fx-xg">${pred.lambdaA.toFixed(1)}–${pred.lambdaB.toFixed(1)}</span>` : "";
 
-    html += `
-      <div class="fixture-card ${played ? "played" : "upcoming"}">
-        <div class="fx-match">
-          <div class="team home">
-            <span class="team-name">${m.home}</span>
-            ${flagImg(m.home)}
-          </div>
-          <div class="fx-center">
-            ${scoreHtml}
-            <div class="match-meta">${formatDate(m.date)}${groupLabel ? " · " + groupLabel : ""}</div>
-          </div>
-          <div class="team away">
-            ${flagImg(m.away)}
-            <span class="team-name">${m.away}</span>
-          </div>
-        </div>
-        ${showPred ? oddsBarHtml(pred, played) : ""}
-      </div>`;
+    html += `<div class="fx-row ${played ? "played" : ""}">
+      <span class="fx-date">${formatDate(m.date)}</span>
+      <span class="fx-team">${flagImg(m.home, true)}<span class="fx-name">${m.home}</span></span>
+      <span class="fx-score">${scoreText}</span>
+      <span class="fx-team fx-away"><span class="fx-name">${m.away}</span>${flagImg(m.away, true)}</span>
+      ${oddsHtml}
+    </div>`;
   }
 
   html += `</div>`;
