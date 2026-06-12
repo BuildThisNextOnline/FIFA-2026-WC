@@ -691,7 +691,7 @@ function renderBracketDraw(allMatches, params) {
   const SW = 124, SH = 26, TG = 2;   // slot width/height, team gap
   const RG = 16;                       // horizontal gap between rounds
   const MG = 14;                       // vertical gap between R32 matches
-  const PAD = 20;                      // top/bottom padding
+  const PAD = 68;                      // top padding (leaves room for champion box)
   const STEP = SW + RG;                // x step per round
 
   // Assign y-coords from leaf (R32) positions upward
@@ -812,10 +812,12 @@ function renderBracketDraw(allMatches, params) {
 
     // Slots — use _home/_away (resolved team names) when available (prediction mode)
     const pred = !!m._predicted;
-    const scoreA = played ? (pred ? `~${m.score.ft_home}` : m.score.ft_home) : null;
-    const scoreB = played ? (pred ? `~${m.score.ft_away}` : m.score.ft_away) : null;
-    out += slot(x, y1, m._home || m.home, scoreA, hw, pred);
-    out += slot(x, y2, m._away || m.away, scoreB, aw, pred);
+    // Predicted scores are not shown in the draw (see Fixtures tab for odds/scores)
+    const scoreA = (played && !pred) ? m.score.ft_home : null;
+    const scoreB = (played && !pred) ? m.score.ft_away : null;
+    // Green winner highlight only for real (played) results, not predictions
+    out += slot(x, y1, m._home || m.home, scoreA, !pred && hw, pred);
+    out += slot(x, y2, m._away || m.away, scoreB, !pred && aw, pred);
 
     // Connecting lines to children (drawn from parent)
     if (top || bot) {
@@ -852,8 +854,27 @@ function renderBracketDraw(allMatches, params) {
   const fp = !!finalM.score;
   const [fhw, faw] = matchWinner(finalM);
   const fp_pred = !!finalM._predicted;
-  svg += slot(FINAL_X, fy1, finalM._home || finalM.home, fp ? (fp_pred ? `~${finalM.score.ft_home}` : finalM.score.ft_home) : null, fhw, fp_pred);
-  svg += slot(FINAL_X, fy2, finalM._away || finalM.away, fp ? (fp_pred ? `~${finalM.score.ft_away}` : finalM.score.ft_away) : null, faw, fp_pred);
+  const fScoreA = (fp && !fp_pred) ? finalM.score.ft_home : null;
+  const fScoreB = (fp && !fp_pred) ? finalM.score.ft_away : null;
+  svg += slot(FINAL_X, fy1, finalM._home || finalM.home, fScoreA, !fp_pred && fhw, fp_pred);
+  svg += slot(FINAL_X, fy2, finalM._away || finalM.away, fScoreB, !fp_pred && faw, fp_pred);
+
+  // Champion box — shown above Final when a winner is known/predicted
+  const champTeam = fp
+    ? (finalM.score.pen_winner
+        || ((finalM.score.et_home ?? finalM.score.ft_home) > (finalM.score.et_away ?? finalM.score.ft_away)
+            ? (finalM._home || finalM.home)
+            : (finalM._away || finalM.away)))
+    : null;
+  if (champTeam) {
+    const cx = FINAL_X + SW / 2;
+    const cy = fy1 - 36;
+    const cw = SW + 24, ch = 26;
+    const gold = fp_pred ? "#f59e0b" : "#22c55e";
+    svg += `<rect x="${cx - cw/2}" y="${cy}" width="${cw}" height="${ch}" rx="5" fill="rgba(245,158,11,0.13)" stroke="${gold}" stroke-width="1.5"/>`;
+    svg += `<text x="${cx}" y="${cy + 10}" fill="${gold}" font-size="9" font-weight="700" text-anchor="middle" text-transform="uppercase" letter-spacing="1">🏆 ${fp_pred ? "PREDICTED CHAMPION" : "CHAMPION"}</text>`;
+    svg += `<text x="${cx}" y="${cy + 21}" fill="#f8fafc" font-size="12" font-weight="600" text-anchor="middle">${champTeam}</text>`;
+  }
 
   // Lines from SF to Final
   if (leftRoot) {
