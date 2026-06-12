@@ -2,7 +2,7 @@
 
 Auto-updating probability page for FIFA World Cup 2026 (Canada / USA / Mexico, 48 teams, Jun 11 – Jul 19, 2026). After every completed match, recomputes per-match scoreline predictions and per-team advancement/champion probabilities for the entire remaining tournament.
 
-**Live site:** https://buildthisnextonline.github.io/worldcup-2026-probabilities/
+**Live site:** https://BuildThisNextOnline.github.io/FIFA-2026-WC/
 
 ---
 
