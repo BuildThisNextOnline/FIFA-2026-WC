@@ -160,7 +160,7 @@
 import { loadData, refreshData, getPlayedMatches, getRemainingMatches, getAllMatches } from "./js/data.js";
 import { initRatings } from "./js/ratings.js";
 import { expectedGoals, scorelineMatrix, matchOdds, mostLikelyScore } from "./js/model.js";
-import { rankGroup } from "./js/tournament.js";
+import { rankGroup, rankThirdPlace, selectThirdPlaceQualifiers, slotThirdPlace, THIRD_PLACE_SLOTS } from "./js/tournament.js";
 import { DEFAULTS as MODEL_DEFAULTS } from "./js/model.js";
 
 const statusDot  = document.getElementById("statusDot");
@@ -595,23 +595,47 @@ function buildPredictedDraw(allMatches, params) {
     if (gTeams[g]) rankings[g] = rankGroup(g, gTeams[g], work);
   }
 
-  // 3. Iteratively resolve knockout placeholder names and predict winners
+  // 3. Compute third-place slot assignment
+  const thirdStandings = "ABCDEFGHIJKL".split("").flatMap(g => {
+    const s = rankings[g]?.[2];
+    return s ? [{ ...s, group: g }] : [];
+  });
+  const top8thirds = selectThirdPlaceQualifiers(rankThirdPlace(thirdStandings));
+  const slotAssignment = slotThirdPlace(top8thirds) || {};  // { "R32-02": "A", ... }
+
+  // Build feed-matchId → third-place team name
+  const opponentToSlot = {};
+  for (const slot of THIRD_PLACE_SLOTS) opponentToSlot[slot.opponent] = slot.matchId;
+  const thirdTeamByFeedId = {};
+  for (const m of work) {
+    if (m.group !== "R32") continue;
+    const hasThird = (m.home && /^3/.test(m.home)) || (m.away && /^3/.test(m.away));
+    if (!hasThird) continue;
+    const opponent = /^3/.test(m.home) ? m.away : m.home;
+    const slotId = opponentToSlot[opponent];
+    if (slotId && slotAssignment[slotId]) {
+      thirdTeamByFeedId[m.id] = rankings[slotAssignment[slotId]]?.[2]?.team || null;
+    }
+  }
+
+  // 4. Iteratively resolve knockout placeholder names and predict winners
   const byId = {};
   work.forEach(m => { if (m.id) byId[m.id] = m; });
   const winners = {};
 
-  function resolveName(placeholder) {
+  function resolveName(placeholder, matchId) {
     if (!placeholder || !/^[0-9WL3]/.test(placeholder)) return placeholder;
     const m1 = placeholder.match(/^1([A-L])$/); if (m1) return rankings[m1[1]]?.[0]?.team || null;
     const m2 = placeholder.match(/^2([A-L])$/); if (m2) return rankings[m2[1]]?.[1]?.team || null;
     const mW = placeholder.match(/^W(\d+)$/);   if (mW) return winners[`m${mW[1]}`] || null;
+    if (/^3/.test(placeholder) && matchId) return thirdTeamByFeedId[matchId] || null;
     return null;
   }
 
   for (const round of ["R32","R16","QF","SF","Final"]) {
     for (const m of work.filter(m => m.group === round)) {
-      const teamA = resolveName(m.home) || m.home;
-      const teamB = resolveName(m.away) || m.away;
+      const teamA = resolveName(m.home, m.id) || m.home;
+      const teamB = resolveName(m.away, m.id) || m.away;
       m.home = teamA;
       m.away = teamB;
       if (m.score) {
@@ -941,6 +965,7 @@ function setViewMode(mode) {
     const p = getSliderParams();
     renderFixtures(all, p);
     renderStandings(all);
+    renderBracket();
     renderBracketDraw(all, p);
   } catch { /* data not loaded yet */ }
 }
