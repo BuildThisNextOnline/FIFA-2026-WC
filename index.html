@@ -23,6 +23,70 @@
 <main>
   <div id="errorBanner" class="error-banner" style="display:none"></div>
 
+  <div class="page-layout">
+
+    <!-- ── Left sidebar: Model Parameters ──────────────────────────────── -->
+    <aside class="sidebar">
+      <div class="sliders-panel">
+        <div class="sliders-title">Model Parameters</div>
+        <div class="sliders-stack">
+
+          <div class="sparam">
+            <span class="sparam-name">Home advantage</span>
+            <span class="sparam-desc">Host nations (Mexico, USA, Canada) score more goals when playing at home. The recommended +35% matches historical tournament data. Slide up if you think the home crowd will be unusually decisive this year; slide down toward 0% if you think it won't matter.</span>
+            <div class="sparam-ctrl">
+              <input type="range" class="slider-input" data-param="gamma" min="0" max="0.60" step="0.05" value="0.30">
+              <span class="sparam-val" data-for="gamma">+35% more goals</span>
+            </div>
+          </div>
+
+          <div class="sparam">
+            <span class="sparam-name">Draw correction</span>
+            <span class="sparam-desc">In recent World Cups, roughly 1 in 4 group stage matches ends in a draw — but the raw goal model predicts too few. This slider adds draws back. The recommended −10% is calibrated to match historical draw rates. Leave it here unless you think this tournament will be unusually decisive (slide toward 0%) or unusually cautious and tactical (slide toward −30%).</span>
+            <div class="sparam-ctrl">
+              <input type="range" class="slider-input" data-param="tau" min="-0.30" max="0" step="0.05" value="-0.10">
+              <span class="sparam-val" data-for="tau">−10%</span>
+            </div>
+          </div>
+
+          <div class="sparam">
+            <span class="sparam-name">Rest advantage</span>
+            <span class="sparam-desc">How much extra rest days benefit a team (capped at 5 days). At the recommended setting, a team with 5+ more rest days scores ~35% more goals; a 3-day gap gives ~20%; a 2-day gap gives ~13%. Slide up if you think fixture congestion will be a decisive factor; slide to 0% if you think rest makes no difference.</span>
+            <div class="sparam-ctrl">
+              <input type="range" class="slider-input" data-param="delta" min="0" max="0.15" step="0.01" value="0.06">
+              <span class="sparam-val" data-for="delta">35% at 5 days</span>
+            </div>
+          </div>
+
+          <div class="sparam">
+            <span class="sparam-name">Extra-time fatigue</span>
+            <span class="sparam-desc">Teams coming off a 120-minute match (extra time + possible penalties) score fewer goals next time. At the recommended −10%, their attacking output drops by 10%. Set to 0% if you think professionals recover fully regardless; slide toward −30% if you think a 120-minute match takes a severe toll.</span>
+            <div class="sparam-ctrl">
+              <input type="range" class="slider-input" data-param="etPenalty" min="0" max="0.30" step="0.05" value="0.10">
+              <span class="sparam-val" data-for="etPenalty">−10% goals</span>
+            </div>
+          </div>
+
+          <div class="sparam">
+            <span class="sparam-name">Simulations</span>
+            <span class="sparam-desc">Number of full tournament simulations run. More = more accurate probabilities but slower. 10,000 is a good balance; use 50,000 for the most precise numbers.</span>
+            <div class="sparam-ctrl">
+              <input type="range" class="slider-input" data-param="N" min="1000" max="50000" step="1000" value="10000">
+              <span class="sparam-val" data-for="N">10 000</span>
+            </div>
+          </div>
+
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
+          <button class="btn primary" id="rerunBtn">↻ Re-run</button>
+          <span id="simStatus" style="color:var(--text-muted);font-size:11px"></span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Right content area ───────────────────────────────────────────── -->
+    <div class="content-area">
+
   <div class="tabs">
     <button class="tab-btn active" data-tab="fixtures">Fixtures</button>
     <button class="tab-btn" data-tab="standings">Standings</button>
@@ -60,63 +124,6 @@
 
   <div id="tab-bracket" style="display:none">
 
-    <!-- ── Sliders ───────────────────────────────────────────────────────── -->
-    <div class="sliders-panel">
-      <div class="sliders-title">Model Parameters</div>
-      <div class="sliders-stack">
-
-        <div class="sparam">
-          <span class="sparam-name">Home advantage</span>
-          <span class="sparam-desc">Host nations (Mexico, USA, Canada) score more goals when playing at home. The recommended +35% matches historical tournament data. Slide up if you think the home crowd will be unusually decisive this year; slide down toward 0% if you think it won't matter.</span>
-          <div class="sparam-ctrl">
-            <input type="range" class="slider-input" data-param="gamma" min="0" max="0.60" step="0.05" value="0.30">
-            <span class="sparam-val" data-for="gamma">+35% more goals</span>
-          </div>
-        </div>
-
-        <div class="sparam">
-          <span class="sparam-name">Draw correction</span>
-          <span class="sparam-desc">In recent World Cups, roughly 1 in 4 group stage matches ends in a draw — but the raw goal model predicts too few. This slider adds draws back. The recommended −10% is calibrated to match historical draw rates. Leave it here unless you think this tournament will be unusually decisive (slide toward 0%) or unusually cautious and tactical (slide toward −30%).</span>
-          <div class="sparam-ctrl">
-            <input type="range" class="slider-input" data-param="tau" min="-0.30" max="0" step="0.05" value="-0.10">
-            <span class="sparam-val" data-for="tau">−10%</span>
-          </div>
-        </div>
-
-        <div class="sparam">
-          <span class="sparam-name">Rest advantage</span>
-          <span class="sparam-desc">How much extra rest days benefit a team (capped at 5 days). At the recommended setting, a team with 5+ more rest days scores ~35% more goals; a 3-day gap gives ~20%; a 2-day gap gives ~13%. Slide up if you think fixture congestion will be a decisive factor; slide to 0% if you think rest makes no difference.</span>
-          <div class="sparam-ctrl">
-            <input type="range" class="slider-input" data-param="delta" min="0" max="0.15" step="0.01" value="0.06">
-            <span class="sparam-val" data-for="delta">35% at 5 days</span>
-          </div>
-        </div>
-
-        <div class="sparam">
-          <span class="sparam-name">Extra-time fatigue</span>
-          <span class="sparam-desc">Teams coming off a 120-minute match (extra time + possible penalties) score fewer goals next time. At the recommended −10%, their attacking output drops by 10%. Set to 0% if you think professionals recover fully regardless; slide toward −30% if you think a 120-minute match takes a severe toll.</span>
-          <div class="sparam-ctrl">
-            <input type="range" class="slider-input" data-param="etPenalty" min="0" max="0.30" step="0.05" value="0.10">
-            <span class="sparam-val" data-for="etPenalty">−10% goals</span>
-          </div>
-        </div>
-
-        <div class="sparam">
-          <span class="sparam-name">Simulations</span>
-          <span class="sparam-desc">Number of full tournament simulations run. More = more accurate probabilities but slower. 10,000 is a good balance; use 50,000 for the most precise numbers.</span>
-          <div class="sparam-ctrl">
-            <input type="range" class="slider-input" data-param="N" min="1000" max="50000" step="1000" value="10000">
-            <span class="sparam-val" data-for="N">10 000</span>
-          </div>
-        </div>
-
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
-        <button class="btn primary" id="rerunBtn">↻ Re-run</button>
-        <span id="simStatus" style="color:var(--text-muted);font-size:11px"></span>
-      </div>
-    </div>
-
     <!-- ── Round tabs ────────────────────────────────────────────────────── -->
     <div class="round-tabs">
       <button class="round-tab active" data-round="champion">Champion</button>
@@ -132,7 +139,8 @@
       <div class="loading-msg">Waiting for simulation…</div>
     </div>
 
-  </div>
+    </div><!-- /.content-area -->
+  </div><!-- /.page-layout -->
 </main>
 
 <script type="module">
@@ -815,6 +823,8 @@ function getSliderN() {
 document.getElementById("rerunBtn")?.addEventListener("click", () => {
   try {
     const all = getAllMatches();
+    renderFixtures(all);
+    renderBracketDraw(all);
     runMonteCarlo(all, getSliderParams(), getSliderN());
   } catch { /* data not loaded yet */ }
 });
