@@ -618,3 +618,42 @@ main { padding: 24px; max-width: 1400px; margin: 0 auto; }
   header { padding: 12px 16px; }
   .lb-row { grid-template-columns: 28px 1fr 44px 80px 44px; }
 }
+
+/* Current / Prediction view toggle */
+.view-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.view-toggle-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+}
+
+.view-btn {
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+.view-btn:hover {
+  border-color: var(--accent-light);
+  color: var(--text);
+}
+
+.view-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}

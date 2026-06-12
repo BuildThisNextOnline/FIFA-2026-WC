@@ -94,6 +94,12 @@
     <!-- ── Right content area ───────────────────────────────────────────── -->
     <div class="content-area">
 
+  <div class="view-toggle">
+    <span class="view-toggle-label">View:</span>
+    <button class="view-btn active" data-view="current">Current</button>
+    <button class="view-btn" data-view="prediction">Prediction</button>
+  </div>
+
   <div class="tabs">
     <button class="tab-btn active" data-tab="fixtures">Fixtures</button>
     <button class="tab-btn" data-tab="standings">Standings</button>
@@ -164,6 +170,7 @@ const errorBanner = document.getElementById("errorBanner");
 const matchCountEl = document.getElementById("matchCount");
 
 let activeFilter = "all";
+let viewMode    = "current";   // "current" | "prediction"
 let _ratings  = null;   // processed ratings for UI match predictions
 let _eloRaw   = null;   // raw elo-seed.json content for the worker
 let _simResult = null;  // latest Monte Carlo output { N, teams }
@@ -389,7 +396,7 @@ function renderFixtures(matches, params = {}) {
               <span class="team-name">${m.away}</span>
             </div>
           </div>
-          ${pred ? oddsBarHtml(pred, played) : ""}
+          ${pred && viewMode === "prediction" ? oddsBarHtml(pred, played) : ""}
         </div>`;
     }
     html += `</div>`;
@@ -425,7 +432,16 @@ function champPctHtml(teamName) {
 }
 
 function renderStandings(allMatches) {
-  const groupTeams = getGroupTeams(allMatches);
+  // In prediction mode, fill unplayed group matches with most-likely predicted scores
+  const matchesForStandings = viewMode === "prediction"
+    ? allMatches.map(m => {
+        if (m.score !== null || !/^[A-L]$/.test(m.group)) return m;
+        const pred = predictMatch(m, getSliderParams());
+        if (!pred) return m;
+        return { ...m, score: { ft_home: pred.best.homeGoals, ft_away: pred.best.awayGoals, et_home: null, et_away: null, pen_winner: null } };
+      })
+    : allMatches;
+  const groupTeams = getGroupTeams(matchesForStandings);
   const hasSim = !!_simResult;
   let html = '<div class="standings-grid">';
 
@@ -437,7 +453,7 @@ function renderStandings(allMatches) {
     if (teams.length === 0) {
       html += `<div style="color:var(--text-muted);font-size:12px;padding:10px">Data pending</div>`;
     } else {
-      const ranked = rankGroup(g, teams, allMatches);
+      const ranked = rankGroup(g, teams, matchesForStandings);
       html += `<table class="st-table">
         <thead><tr>
           <th></th><th class="st-team-hdr"></th>
@@ -498,6 +514,14 @@ function renderBracket() {
   const el = document.getElementById("bracketContent");
   if (!el) return;
 
+  if (viewMode === "current") {
+    el.innerHTML = `<div class="loading-msg" style="padding:32px 0;text-align:center">
+      <div style="font-size:15px;margin-bottom:8px">Switch to <strong>Prediction</strong> mode to see Stage Probabilities</div>
+      <div style="font-size:12px;color:var(--text-muted)">Stage probabilities are based on Monte Carlo simulation of remaining matches.<br>Click <strong>↻ Re-run</strong> in the sidebar to generate predictions.</div>
+    </div>`;
+    return;
+  }
+
   if (!_simResult) {
     el.innerHTML = `<div class="loading-msg">Running simulation…</div>`;
     return;
@@ -555,13 +579,68 @@ function renderBracket() {
 
 // ── Visual bracket draw ───────────────────────────────────────────────────────
 
-function renderBracketDraw(allMatches) {
+function buildPredictedDraw(allMatches, params) {
+  // 1. Fill unplayed group matches with predicted scores
+  const work = allMatches.map(m => {
+    if (m.score !== null || !/^[A-L]$/.test(m.group)) return { ...m };
+    const pred = predictMatch(m, params);
+    if (!pred) return { ...m };
+    return { ...m, score: { ft_home: pred.best.homeGoals, ft_away: pred.best.awayGoals, et_home: null, et_away: null, pen_winner: null }, _predicted: true };
+  });
+
+  // 2. Compute predicted group rankings
+  const gTeams = getGroupTeams(work);
+  const rankings = {};
+  for (const g of "ABCDEFGHIJKL") {
+    if (gTeams[g]) rankings[g] = rankGroup(g, gTeams[g], work);
+  }
+
+  // 3. Iteratively resolve knockout placeholder names and predict winners
+  const byId = {};
+  work.forEach(m => { if (m.id) byId[m.id] = m; });
+  const winners = {};
+
+  function resolveName(placeholder) {
+    if (!placeholder || !/^[0-9WL3]/.test(placeholder)) return placeholder;
+    const m1 = placeholder.match(/^1([A-L])$/); if (m1) return rankings[m1[1]]?.[0]?.team || null;
+    const m2 = placeholder.match(/^2([A-L])$/); if (m2) return rankings[m2[1]]?.[1]?.team || null;
+    const mW = placeholder.match(/^W(\d+)$/);   if (mW) return winners[`m${mW[1]}`] || null;
+    return null;
+  }
+
+  for (const round of ["R32","R16","QF","SF","Final"]) {
+    for (const m of work.filter(m => m.group === round)) {
+      const teamA = resolveName(m.home) || m.home;
+      const teamB = resolveName(m.away) || m.away;
+      m.home = teamA;
+      m.away = teamB;
+      if (m.score) {
+        const hs = m.score.et_home ?? m.score.ft_home;
+        const as = m.score.et_away ?? m.score.ft_away;
+        winners[m.id] = m.score.pen_winner || (hs > as ? teamA : teamB);
+      } else if (teamA && teamB && !/^[0-9WL3]/.test(teamA) && !/^[0-9WL3]/.test(teamB)) {
+        const pred = predictMatch({ ...m, home: teamA, away: teamB }, params);
+        if (pred) {
+          m.score = { ft_home: pred.best.homeGoals, ft_away: pred.best.awayGoals, et_home: null, et_away: null, pen_winner: null };
+          m._predicted = true;
+          winners[m.id] = pred.odds.home >= pred.odds.away ? teamA : teamB;
+        }
+      }
+    }
+  }
+  return work;
+}
+
+function renderBracketDraw(allMatches, params) {
+  const drawMatches = viewMode === "prediction"
+    ? buildPredictedDraw(allMatches, params || getSliderParams())
+    : allMatches;
   const el = document.getElementById("bracketDraw");
   if (!el) return;
 
   // Match lookup by id ("m73" etc.)
   const matchById = {};
-  allMatches.forEach(m => { if (m.id) matchById[m.id] = m; });
+  drawMatches.forEach(m => { if (m.id) matchById[m.id] = m; });
 
   // Resolve "W{n}" placeholder → match object
   function resolveW(ref) {
@@ -575,7 +654,7 @@ function renderBracketDraw(allMatches) {
     return { m, top: makeNode(resolveW(m.home)), bot: makeNode(resolveW(m.away)) };
   }
 
-  const finalM = allMatches.find(m => m.group === "Final");
+  const finalM = drawMatches.find(m => m.group === "Final");
   if (!finalM) { el.innerHTML = '<div class="loading-msg">Bracket draw not available yet</div>'; return; }
 
   const leftRoot  = makeNode(resolveW(finalM.home));   // one SF side
@@ -654,11 +733,11 @@ function renderBracketDraw(allMatches) {
 
   function isPH(raw) { return !raw || /^[0-9WL3]/.test(raw); }
 
-  function slot(x, y, team, scoreVal, wins) {
+  function slot(x, y, team, scoreVal, wins, predicted) {
     const ph = isPH(team);
     const fill   = wins ? C.slotW  : C.slot;
-    const stroke = wins ? C.borderW : C.border;
-    const txtCol = wins ? C.win : (ph ? C.ph : C.text);
+    const stroke = wins ? C.borderW : (predicted ? "#3b82f6" : C.border);
+    const txtCol = wins ? C.win : (ph ? C.ph : (predicted ? "#93c5fd" : C.text));
     const flagCode = !ph ? TEAM_FLAGS[team] : null;
     let inner = "";
     if (flagCode) {
@@ -705,8 +784,11 @@ function renderBracketDraw(allMatches) {
     const [hw, aw] = matchWinner(m);
 
     // Slots
-    out += slot(x, y1, m.home, played ? m.score.ft_home : null, hw);
-    out += slot(x, y2, m.away, played ? m.score.ft_away : null, aw);
+    const pred = !!m._predicted;
+    const scoreA = played ? (pred ? `~${m.score.ft_home}` : m.score.ft_home) : null;
+    const scoreB = played ? (pred ? `~${m.score.ft_away}` : m.score.ft_away) : null;
+    out += slot(x, y1, m.home, scoreA, hw, pred);
+    out += slot(x, y2, m.away, scoreB, aw, pred);
 
     // Connecting lines to children (drawn from parent)
     if (top || bot) {
@@ -742,8 +824,9 @@ function renderBracketDraw(allMatches) {
   const fy2 = ROOT_MID_Y + TG/2;
   const fp = !!finalM.score;
   const [fhw, faw] = matchWinner(finalM);
-  svg += slot(FINAL_X, fy1, finalM.home, fp ? finalM.score.ft_home : null, fhw);
-  svg += slot(FINAL_X, fy2, finalM.away, fp ? finalM.score.ft_away : null, faw);
+  const fp_pred = !!finalM._predicted;
+  svg += slot(FINAL_X, fy1, finalM.home, fp ? (fp_pred ? `~${finalM.score.ft_home}` : finalM.score.ft_home) : null, fhw, fp_pred);
+  svg += slot(FINAL_X, fy2, finalM.away, fp ? (fp_pred ? `~${finalM.score.ft_away}` : finalM.score.ft_away) : null, faw, fp_pred);
 
   // Lines from SF to Final
   if (leftRoot) {
@@ -847,12 +930,31 @@ function getSliderN() {
   return el ? parseInt(el.value) : 10000;
 }
 
-document.getElementById("rerunBtn")?.addEventListener("click", () => {
+// View toggle (Current / Prediction)
+function setViewMode(mode) {
+  viewMode = mode;
+  document.querySelectorAll(".view-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.view === mode);
+  });
   try {
     const all = getAllMatches();
     const p = getSliderParams();
     renderFixtures(all, p);
-    renderBracketDraw(all);
+    renderStandings(all);
+    renderBracketDraw(all, p);
+  } catch { /* data not loaded yet */ }
+}
+
+document.querySelectorAll(".view-btn").forEach(btn => {
+  btn.addEventListener("click", () => setViewMode(btn.dataset.view));
+});
+
+// Re-run button — collect slider params, switch to Prediction, restart simulation
+document.getElementById("rerunBtn")?.addEventListener("click", () => {
+  try {
+    setViewMode("prediction");
+    const all = getAllMatches();
+    const p = getSliderParams();
     runMonteCarlo(all, p, getSliderN());
   } catch { /* data not loaded yet */ }
 });
