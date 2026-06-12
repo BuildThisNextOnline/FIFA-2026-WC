@@ -29,11 +29,13 @@
     <aside class="sidebar">
       <div class="sliders-panel">
         <div class="sliders-title">Model Parameters</div>
+
+        <div class="param-section-label">Affects bracket &amp; fixture predictions</div>
         <div class="sliders-stack">
 
           <div class="sparam">
             <span class="sparam-name">Home advantage</span>
-            <span class="sparam-desc">Host nations (Mexico, USA, Canada) score more goals when playing at home. The recommended +35% matches historical tournament data. Slide up if you think the home crowd will be unusually decisive this year; slide down toward 0% if you think it won't matter.</span>
+            <span class="sparam-desc">Mexico, USA &amp; Canada score more at home. +35% matches historical data.</span>
             <div class="sparam-ctrl">
               <input type="range" class="slider-input" data-param="gamma" min="0" max="0.60" step="0.05" value="0.30">
               <span class="sparam-val" data-for="gamma">+35% more goals</span>
@@ -41,8 +43,22 @@
           </div>
 
           <div class="sparam">
+            <span class="sparam-name">Simulations</span>
+            <span class="sparam-desc">More runs = more precise bracket %. 10k is fast; 50k is most accurate.</span>
+            <div class="sparam-ctrl">
+              <input type="range" class="slider-input" data-param="N" min="1000" max="50000" step="1000" value="10000">
+              <span class="sparam-val" data-for="N">10 000</span>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="param-section-label" style="margin-top:14px">Affects fixture predictions only</div>
+        <div class="sliders-stack">
+
+          <div class="sparam">
             <span class="sparam-name">Draw correction</span>
-            <span class="sparam-desc">In recent World Cups, roughly 1 in 4 group stage matches ends in a draw — but the raw goal model predicts too few. This slider adds draws back. The recommended −10% is calibrated to match historical draw rates. Leave it here unless you think this tournament will be unusually decisive (slide toward 0%) or unusually cautious and tactical (slide toward −30%).</span>
+            <span class="sparam-desc">~1 in 4 group games ends in a draw. −10% calibrates the model to match that rate.</span>
             <div class="sparam-ctrl">
               <input type="range" class="slider-input" data-param="tau" min="-0.30" max="0" step="0.05" value="-0.10">
               <span class="sparam-val" data-for="tau">−10%</span>
@@ -51,7 +67,7 @@
 
           <div class="sparam">
             <span class="sparam-name">Rest advantage</span>
-            <span class="sparam-desc">How much extra rest days benefit a team (capped at 5 days). At the recommended setting, a team with 5+ more rest days scores ~35% more goals; a 3-day gap gives ~20%; a 2-day gap gives ~13%. Slide up if you think fixture congestion will be a decisive factor; slide to 0% if you think rest makes no difference.</span>
+            <span class="sparam-desc">Extra rest boosts scoring. 5+ days gap = ~35% more goals for the fresher team.</span>
             <div class="sparam-ctrl">
               <input type="range" class="slider-input" data-param="delta" min="0" max="0.15" step="0.01" value="0.06">
               <span class="sparam-val" data-for="delta">35% at 5 days</span>
@@ -60,19 +76,10 @@
 
           <div class="sparam">
             <span class="sparam-name">Extra-time fatigue</span>
-            <span class="sparam-desc">Teams coming off a 120-minute match (extra time + possible penalties) score fewer goals next time. At the recommended −10%, their attacking output drops by 10%. Set to 0% if you think professionals recover fully regardless; slide toward −30% if you think a 120-minute match takes a severe toll.</span>
+            <span class="sparam-desc">After a 120-min match, a team's goal output drops in their next game.</span>
             <div class="sparam-ctrl">
               <input type="range" class="slider-input" data-param="etPenalty" min="0" max="0.30" step="0.05" value="0.10">
               <span class="sparam-val" data-for="etPenalty">−10% goals</span>
-            </div>
-          </div>
-
-          <div class="sparam">
-            <span class="sparam-name">Simulations</span>
-            <span class="sparam-desc">Number of full tournament simulations run. More = more accurate probabilities but slower. 10,000 is a good balance; use 50,000 for the most precise numbers.</span>
-            <div class="sparam-ctrl">
-              <input type="range" class="slider-input" data-param="N" min="1000" max="50000" step="1000" value="10000">
-              <span class="sparam-val" data-for="N">10 000</span>
             </div>
           </div>
 
@@ -503,25 +510,31 @@ function renderBracket() {
   const maxProb = entries[0]?.prob || 1;
 
   let html = `<div class="lb-header">P(${label}) · ${_simResult.N.toLocaleString()} simulations</div>`;
-  html += `<div class="leaderboard">`;
 
-  entries.forEach(({ name, prob }, i) => {
+  const half = Math.ceil(entries.length / 2);
+  const left  = entries.slice(0, half);
+  const right = entries.slice(half);
+
+  function rowHtml({ name, prob }, i, offset) {
     const pct = prob >= 0.001
       ? (prob * 100).toFixed(prob >= 0.099 ? 1 : 2) + "%"
       : "<0.1%";
     const barPct = (prob / maxProb * 100).toFixed(2);
     const grp    = _teamGroups[name] || "?";
-    const podium = i === 0 ? "lb-gold" : i === 1 ? "lb-silver" : i === 2 ? "lb-bronze" : "";
-
-    html += `<div class="lb-row">
-      <span class="lb-rank ${podium}">${i + 1}</span>
+    const rank   = i + 1 + offset;
+    const podium = rank === 1 ? "lb-gold" : rank === 2 ? "lb-silver" : rank === 3 ? "lb-bronze" : "";
+    return `<div class="lb-row">
+      <span class="lb-rank ${podium}">${rank}</span>
       <div class="lb-team">${flagImg(name)}<span class="lb-name">${name}</span></div>
       <span class="lb-grp">Grp ${grp}</span>
       <div class="lb-bar-wrap"><div class="lb-bar" style="width:${barPct}%"></div></div>
       <span class="lb-pct">${pct}</span>
     </div>`;
-  });
+  }
 
+  html += `<div class="leaderboard">`;
+  html += `<div class="lb-col">${left.map((e, i) => rowHtml(e, i, 0)).join("")}</div>`;
+  html += `<div class="lb-col">${right.map((e, i) => rowHtml(e, i, half)).join("")}</div>`;
   html += `</div>`;
   el.innerHTML = html;
 }
