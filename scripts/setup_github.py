@@ -137,7 +137,7 @@ def create_repo(username, token, repo_name):
         message = (json.loads(body).get("message", body)
                    if body.strip().startswith("{") else body)
 
-        if "already exists" in message.lower():
+        if e.code == 422 or "already exists" in message.lower():
             html_url = f"https://github.com/{username}/{repo_name}"
             ok(f"Repository already exists — using it: {html_url}")
             return html_url
@@ -214,10 +214,19 @@ def push_code(username, token, repo_name):
     ok("Token removed from git config")
 
     if result.returncode != 0:
-        err("Push failed. Most likely causes:")
-        info('  - Token does not have "repo" scope')
-        info("  - Incorrect token (try generating a fresh one)")
-        info("  Fix github_config.json and re-run deploy_to_github.bat")
+        err("Push failed.")
+        info("")
+        info("  The most common cause is a missing token scope.")
+        info("  GitHub requires TWO scopes to push workflow files:")
+        info("")
+        info("    repo      — push code")
+        info("    workflow  — push files inside .github/workflows/")
+        info("")
+        info("  Fix: generate a new token at")
+        info("    https://github.com/settings/tokens/new")
+        info("  tick BOTH 'repo' and 'workflow', copy the new token,")
+        info("  update github_config.json, and re-run deploy_to_github.bat.")
+        info("  (The GitHub repo already exists — it will reuse it.)")
         return False
 
     ok("All code uploaded to GitHub")
