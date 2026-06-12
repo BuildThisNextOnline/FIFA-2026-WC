@@ -26,6 +26,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="fixtures">Fixtures</button>
     <button class="tab-btn" data-tab="standings">Standings</button>
+    <button class="tab-btn" data-tab="draw">Draw</button>
     <button class="tab-btn" data-tab="bracket">Bracket</button>
   </div>
 
@@ -43,6 +44,10 @@
     <div id="fixtureList">
       <div class="loading-msg">Fetching fixtures…</div>
     </div>
+  </div>
+
+  <div id="tab-draw" style="display:none">
+    <div id="bracketDraw"><div class="loading-msg">Loading bracket…</div></div>
   </div>
 
   <div id="tab-standings" style="display:none">
@@ -513,6 +518,216 @@ function renderBracket() {
   el.innerHTML = html;
 }
 
+// ── Visual bracket draw ───────────────────────────────────────────────────────
+
+function renderBracketDraw(allMatches) {
+  const el = document.getElementById("bracketDraw");
+  if (!el) return;
+
+  // Match lookup by id ("m73" etc.)
+  const matchById = {};
+  allMatches.forEach(m => { if (m.id) matchById[m.id] = m; });
+
+  // Resolve "W{n}" placeholder → match object
+  function resolveW(ref) {
+    if (!ref || !ref.startsWith("W")) return null;
+    return matchById[`m${ref.slice(1)}`] || null;
+  }
+
+  // Build a bracket tree node recursively from a match
+  function makeNode(m) {
+    if (!m) return null;
+    return { m, top: makeNode(resolveW(m.home)), bot: makeNode(resolveW(m.away)) };
+  }
+
+  const finalM = allMatches.find(m => m.group === "Final");
+  if (!finalM) { el.innerHTML = '<div class="loading-msg">Bracket draw not available yet</div>'; return; }
+
+  const leftRoot  = makeNode(resolveW(finalM.home));   // one SF side
+  const rightRoot = makeNode(resolveW(finalM.away));   // other SF side
+
+  // ── Layout constants ──────────────────────────────────────────────────────
+  const SW = 124, SH = 26, TG = 2;   // slot width/height, team gap
+  const RG = 16;                       // horizontal gap between rounds
+  const MG = 14;                       // vertical gap between R32 matches
+  const PAD = 20;                      // top/bottom padding
+  const STEP = SW + RG;                // x step per round
+
+  // Assign y-coords from leaf (R32) positions upward
+  let leafIdx = 0;
+  function assignY(node) {
+    if (!node) return;
+    if (!node.top && !node.bot) {
+      // Leaf = R32 match
+      const baseY = PAD + leafIdx * (SH * 2 + TG + MG);
+      node.y1 = baseY;
+      node.y2 = baseY + SH + TG;
+      node.midY = baseY + SH + TG / 2;
+      leafIdx++;
+    } else {
+      assignY(node.top);
+      assignY(node.bot);
+      const tMid = node.top ? node.top.midY : (node.bot ? node.bot.midY : 0);
+      const bMid = node.bot ? node.bot.midY : (node.top ? node.top.midY : 0);
+      node.midY = (tMid + bMid) / 2;
+      node.y1 = node.midY - SH - TG / 2;
+      node.y2 = node.midY + TG / 2;
+    }
+  }
+
+  leafIdx = 0; assignY(leftRoot);
+  const nLeaves = leafIdx;
+  leafIdx = 0; assignY(rightRoot);
+
+  const totalH = PAD + nLeaves * (SH * 2 + TG + MG) - MG + PAD;
+  const ROOT_MID_Y = leftRoot ? leftRoot.midY : totalH / 2;
+
+  // Final sits at center x; 4 rounds on each side
+  const FINAL_X = 4 * STEP;
+  const TOTAL_W = 2 * FINAL_X + SW;
+
+  // Assign x-coords
+  function assignX(node, isLeft, depth) {
+    if (!node) return;
+    node.x = isLeft
+      ? FINAL_X - (depth + 1) * STEP
+      : FINAL_X + SW + RG + depth * STEP;
+    assignX(node.top, isLeft, depth + 1);
+    assignX(node.bot, isLeft, depth + 1);
+  }
+  assignX(leftRoot, true, 0);
+  assignX(rightRoot, false, 0);
+
+  // ── SVG helpers ───────────────────────────────────────────────────────────
+  const C = {
+    bg:      "#0a0e1a",
+    slot:    "#141929",
+    slotW:   "rgba(34,197,94,0.13)",
+    border:  "#1e2a42",
+    borderW: "#22c55e",
+    text:    "#e2e8f0",
+    muted:   "#475569",
+    win:     "#4ade80",
+    ph:      "#334155",  // placeholder text
+    line:    "#1e2a42",
+  };
+
+  function teamName(raw) {
+    if (!raw) return "TBD";
+    return raw.length > 14 ? raw.slice(0, 13) + "…" : raw;
+  }
+
+  function isPH(raw) { return !raw || /^[0-9WL3]/.test(raw); }
+
+  function slot(x, y, team, scoreVal, wins) {
+    const ph = isPH(team);
+    const fill   = wins ? C.slotW  : C.slot;
+    const stroke = wins ? C.borderW : C.border;
+    const txtCol = wins ? C.win : (ph ? C.ph : C.text);
+    const flagCode = !ph ? TEAM_FLAGS[team] : null;
+    let inner = "";
+    if (flagCode) {
+      inner += `<image href="https://flagcdn.com/w20/${flagCode}.png" x="${x+4}" y="${y+6}" width="15" height="11"/>`;
+      inner += `<text x="${x+23}" y="${y+SH/2+4}" fill="${txtCol}" font-size="10.5" font-weight="${wins?'600':'400'}">${teamName(team)}</text>`;
+    } else {
+      inner += `<text x="${x+6}" y="${y+SH/2+4}" fill="${txtCol}" font-size="10.5" font-style="${ph?'italic':'normal'}">${teamName(team)}</text>`;
+    }
+    if (scoreVal != null) {
+      inner += `<text x="${x+SW-5}" y="${y+SH/2+4}" text-anchor="end" fill="${C.muted}" font-size="10.5">${scoreVal}</text>`;
+    }
+    return `<rect x="${x}" y="${y}" width="${SW}" height="${SH}" fill="${fill}" stroke="${stroke}" stroke-width="1" rx="2"/>${inner}`;
+  }
+
+  function matchWinner(m) {
+    if (!m.score) return [false, false];
+    let hs = m.score.et_home ?? m.score.ft_home;
+    let as = m.score.et_away ?? m.score.ft_away;
+    if (hs === as && m.score.pen_winner) {
+      return [m.score.pen_winner === m.home, m.score.pen_winner === m.away];
+    }
+    return [hs > as, as > hs];
+  }
+
+  // ── SVG rendering ─────────────────────────────────────────────────────────
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${TOTAL_W}" height="${totalH}" style="display:block;font-family:Inter,system-ui,sans-serif">`;
+  svg += `<rect width="${TOTAL_W}" height="${totalH}" fill="${C.bg}"/>`;
+
+  // Round labels
+  const roundLabels = ["SF","QF","R16","R32"];
+  for (let d = 0; d < 4; d++) {
+    const lx = FINAL_X - (d+1)*STEP + SW/2;
+    const rx = FINAL_X + SW + RG + d*STEP + SW/2;
+    svg += `<text x="${lx}" y="13" fill="${C.muted}" font-size="9" text-anchor="middle" text-transform="uppercase">${roundLabels[d]}</text>`;
+    svg += `<text x="${rx}" y="13" fill="${C.muted}" font-size="9" text-anchor="middle">${roundLabels[d]}</text>`;
+  }
+  svg += `<text x="${FINAL_X+SW/2}" y="13" fill="${C.muted}" font-size="9" text-anchor="middle">FINAL</text>`;
+
+  function renderNode(node, isLeft) {
+    if (!node) return "";
+    let out = "";
+    const { m, x, y1, y2, midY, top, bot } = node;
+    const played = !!m.score;
+    const [hw, aw] = matchWinner(m);
+
+    // Slots
+    out += slot(x, y1, m.home, played ? m.score.ft_home : null, hw);
+    out += slot(x, y2, m.away, played ? m.score.ft_away : null, aw);
+
+    // Connecting lines to children (drawn from parent)
+    if (top || bot) {
+      const tMidY = top ? top.midY : midY;
+      const bMidY = bot ? bot.midY : midY;
+      const jx = isLeft ? x - RG/2 : x + SW + RG/2;
+      // Horizontal from this match's mid to junction
+      if (isLeft) out += `<line x1="${x}"    y1="${midY}" x2="${jx}" y2="${midY}" stroke="${C.line}" stroke-width="1"/>`;
+      else        out += `<line x1="${x+SW}" y1="${midY}" x2="${jx}" y2="${midY}" stroke="${C.line}" stroke-width="1"/>`;
+      // Vertical bar
+      out += `<line x1="${jx}" y1="${tMidY}" x2="${jx}" y2="${bMidY}" stroke="${C.line}" stroke-width="1"/>`;
+      // Horizontals from children to junction
+      if (top) {
+        const cx = isLeft ? top.x + SW : top.x;
+        out += `<line x1="${cx}" y1="${tMidY}" x2="${jx}" y2="${tMidY}" stroke="${C.line}" stroke-width="1"/>`;
+      }
+      if (bot) {
+        const cx = isLeft ? bot.x + SW : bot.x;
+        out += `<line x1="${cx}" y1="${bMidY}" x2="${jx}" y2="${bMidY}" stroke="${C.line}" stroke-width="1"/>`;
+      }
+    }
+
+    out += renderNode(top, isLeft);
+    out += renderNode(bot, isLeft);
+    return out;
+  }
+
+  svg += renderNode(leftRoot,  true);
+  svg += renderNode(rightRoot, false);
+
+  // Final match
+  const fy1 = ROOT_MID_Y - SH - TG/2;
+  const fy2 = ROOT_MID_Y + TG/2;
+  const fp = !!finalM.score;
+  const [fhw, faw] = matchWinner(finalM);
+  svg += slot(FINAL_X, fy1, finalM.home, fp ? finalM.score.ft_home : null, fhw);
+  svg += slot(FINAL_X, fy2, finalM.away, fp ? finalM.score.ft_away : null, faw);
+
+  // Lines from SF to Final
+  if (leftRoot) {
+    const jx = FINAL_X - RG/2;
+    svg += `<line x1="${FINAL_X}"  y1="${ROOT_MID_Y}" x2="${jx}" y2="${ROOT_MID_Y}" stroke="${C.line}" stroke-width="1"/>`;
+    svg += `<line x1="${jx}" y1="${leftRoot.midY}"  x2="${jx}" y2="${ROOT_MID_Y}"    stroke="${C.line}" stroke-width="1"/>`;
+    svg += `<line x1="${leftRoot.x+SW}" y1="${leftRoot.midY}" x2="${jx}" y2="${leftRoot.midY}" stroke="${C.line}" stroke-width="1"/>`;
+  }
+  if (rightRoot) {
+    const jx = FINAL_X + SW + RG/2;
+    svg += `<line x1="${FINAL_X+SW}" y1="${ROOT_MID_Y}" x2="${jx}" y2="${ROOT_MID_Y}" stroke="${C.line}" stroke-width="1"/>`;
+    svg += `<line x1="${jx}" y1="${rightRoot.midY}" x2="${jx}" y2="${ROOT_MID_Y}"     stroke="${C.line}" stroke-width="1"/>`;
+    svg += `<line x1="${rightRoot.x}" y1="${rightRoot.midY}" x2="${jx}" y2="${rightRoot.midY}" stroke="${C.line}" stroke-width="1"/>`;
+  }
+
+  svg += "</svg>";
+  el.innerHTML = `<div style="overflow-x:auto;padding-bottom:8px">${svg}</div>`;
+}
+
 // ---- Bootstrap --------------------------------------------------------------
 
 async function doLoad(isRefresh = false) {
@@ -531,6 +746,7 @@ async function doLoad(isRefresh = false) {
     renderFixtures(all);
     renderStandings(all);
     renderBracket();
+    renderBracketDraw(all);
     runMonteCarlo(all);
   } catch (err) {
     setStatus("error", "Data load failed");
