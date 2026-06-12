@@ -27,6 +27,14 @@
 
 import { initRatings } from "./ratings.js";
 import { expectedGoals } from "./model.js";
+
+const HOST_NATIONS = new Set(["Mexico", "USA", "Canada"]);
+
+function homeCtx(teamA, teamB) {
+  if (HOST_NATIONS.has(teamA)) return { homeTeam: teamA };
+  if (HOST_NATIONS.has(teamB)) return { homeTeam: teamB };
+  return {};
+}
 import {
   rankGroup,
   rankThirdPlace,
@@ -156,7 +164,7 @@ function simulateOne(
         );
         if (!existing) {
           // No feed entry yet — simulate
-          const [gA, gB] = simGoals(a, b, ratings, params, {}, rng);
+          const [gA, gB] = simGoals(a, b, ratings, params, homeCtx(a, b), rng);
           fullMatches.push({
             id: `sim_${g}_${a}_${b}`, group: g,
             home: a, away: b,
@@ -164,7 +172,7 @@ function simulateOne(
           });
         } else if (!existing.score) {
           // In feed but unplayed — simulate
-          const [gA, gB] = simGoals(existing.home, existing.away, ratings, params, {}, rng);
+          const [gA, gB] = simGoals(existing.home, existing.away, ratings, params, homeCtx(existing.home, existing.away), rng);
           fullMatches.push({
             ...existing,
             score: { ft_home: gA, ft_away: gB, et_home: null, et_away: null, pen_winner: null },
@@ -245,12 +253,12 @@ function simulateOne(
       matchLosers[m.id]  = winner === teamA ? teamB : teamA;
     } else if (m.group === "3rd") {
       // 3rd-place play-off — simulate but don't credit champion race
-      const res = simKnockout(teamA, teamB, ratings, params, {}, rng);
+      const res = simKnockout(teamA, teamB, ratings, params, homeCtx(teamA, teamB), rng);
       matchWinners[m.id] = res.winner;
       matchLosers[m.id]  = res.loser;
       continue;
     } else {
-      const res = simKnockout(teamA, teamB, ratings, params, {}, rng);
+      const res = simKnockout(teamA, teamB, ratings, params, homeCtx(teamA, teamB), rng);
       matchWinners[m.id] = res.winner;
       matchLosers[m.id]  = res.loser;
     }
