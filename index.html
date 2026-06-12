@@ -374,18 +374,23 @@ function renderFixtures(matches, params = {}) {
     const pred     = predictMatch(m, params);
     const showPred = pred && viewMode === "prediction";
 
+    // Short date "Jun 12" for compact card display
+    const shortDate = m.date ? (() => {
+      try { return new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
+      catch { return m.date.slice(5, 10); }
+    })() : "";
+
     const scoreText = played
       ? `${m.score.ft_home}–${m.score.ft_away}`
-      : `vs`;
+      : (showPred ? `${pred.best.homeGoals}–${pred.best.awayGoals}` : "vs");
 
     const oddsHtml = showPred ? `
       <span class="fx-odds">
-        <span class="fx-h">${Math.round(pred.odds.home * 100)}%</span><span class="fx-d">${Math.round(pred.odds.draw * 100)}%</span><span class="fx-a">${Math.round(pred.odds.away * 100)}%</span>
-      </span>
-      <span class="fx-xg">${pred.lambdaA.toFixed(1)}–${pred.lambdaB.toFixed(1)}</span>` : "";
+        <span class="fx-h">${Math.round(pred.odds.home * 100)}</span><span class="fx-d">${Math.round(pred.odds.draw * 100)}</span><span class="fx-a">${Math.round(pred.odds.away * 100)}</span>
+      </span>` : "";
 
-    html += `<div class="fx-row ${played ? "played" : ""}">
-      <span class="fx-date">${formatDate(m.date)}</span>
+    html += `<div class="fx-row ${played ? "played" : ""}${showPred ? " has-pred" : ""}">
+      <span class="fx-date">${shortDate}</span>
       <span class="fx-team">${flagImg(m.home, true)}<span class="fx-name">${m.home}</span></span>
       <span class="fx-score">${scoreText}</span>
       <span class="fx-team fx-away"><span class="fx-name">${m.away}</span>${flagImg(m.away, true)}</span>
