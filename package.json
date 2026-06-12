@@ -1,0 +1,20 @@
+{
+  "name": "worldcup-2026-probabilities",
+  "version": "1.0.0",
+  "description": "FIFA World Cup 2026 probability tracker",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=tests/",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch --testPathPattern=tests/"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "@jest/globals": "^29.7.0"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "transform": {}
+  }
+}

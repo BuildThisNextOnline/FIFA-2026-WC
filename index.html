@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>World Cup 2026 Probability Tracker</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>⚽ World Cup 2026 Probability Tracker</h1>
+    <div class="subtitle">48 teams · 104 matches · Jun 11 – Jul 19, 2026</div>
+  </div>
+</header>
+
+<div class="status-bar" id="statusBar">
+  <span class="dot loading" id="statusDot"></span>
+  <span id="statusText">Loading data…</span>
+</div>
+
+<main>
+  <div id="errorBanner" class="error-banner" style="display:none"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="fixtures">Fixtures</button>
+    <button class="tab-btn" data-tab="standings">Standings</button>
+    <button class="tab-btn" data-tab="bracket">Bracket <span style="font-size:10px;color:var(--text-muted)">(v2)</span></button>
+  </div>
+
+  <div id="tab-fixtures">
+    <div class="controls">
+      <button class="btn primary" id="refreshBtn">↻ Refresh</button>
+      <div class="filter-group">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="played">Played</button>
+        <button class="filter-btn" data-filter="upcoming">Upcoming</button>
+      </div>
+      <div id="matchCount" style="color:var(--text-muted);font-size:12px;margin-left:auto"></div>
+    </div>
+
+    <div id="fixtureList">
+      <div class="loading-msg">Fetching fixtures…</div>
+    </div>
+  </div>
+
+  <div id="tab-standings" style="display:none">
+    <div style="color:var(--text-muted);font-size:11px;margin-bottom:16px">
+      Standings use live results · W/D/L bars use Elo seed ratings ·
+      <span id="simHint">Starting simulation…</span>
+    </div>
+    <div id="standingsGrid"><div class="loading-msg">Computing standings…</div></div>
+  </div>
+
+  <div id="tab-bracket" style="display:none">
+
+    <!-- ── Sliders ───────────────────────────────────────────────────────── -->
+    <div class="sliders-panel">
+      <div class="sliders-title">Model Parameters</div>
+      <div class="sliders-grid">
+        <div class="slider-row">
+          <label class="slider-lbl" title="Host venue advantage added to expected goals (log scale)">Host bonus γ</label>
+          <input type="range" class="slider-input" data-param="gamma"     min="0"    max="0.60" step="0.05" value="0.30">
+          <span  class="slider-val" data-for="gamma">0.30</span>
+        </div>
+        <div class="slider-row">
+          <label class="slider-lbl" title="Dixon-Coles low-score correction; more negative = more draws">DC corr. τ</label>
+          <input type="range" class="slider-input" data-param="tau"       min="-0.30" max="0"   step="0.05" value="-0.10">
+          <span  class="slider-val" data-for="tau">-0.10</span>
+        </div>
+        <div class="slider-row">
+          <label class="slider-lbl" title="Extra rest advantage per day (capped at 5 days)">Rest δ</label>
+          <input type="range" class="slider-input" data-param="delta"     min="0"    max="0.15" step="0.01" value="0.06">
+          <span  class="slider-val" data-for="delta">0.06</span>
+        </div>
+        <div class="slider-row">
+          <label class="slider-lbl" title="Penalty for teams that went to extra time in their previous match">ET penalty</label>
+          <input type="range" class="slider-input" data-param="etPenalty" min="0"    max="0.30" step="0.05" value="0.10">
+          <span  class="slider-val" data-for="etPenalty">0.10</span>
+        </div>
+        <div class="slider-row">
+          <label class="slider-lbl" title="Number of Monte Carlo simulations (higher = more accurate, slower)">Simulations N</label>
+          <input type="range" class="slider-input" data-param="N"         min="1000" max="50000" step="1000" value="10000">
+          <span  class="slider-val" data-for="N">10 000</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+        <button class="btn primary" id="rerunBtn">↻ Re-run</button>
+        <span id="simStatus" style="color:var(--text-muted);font-size:11px"></span>
+      </div>
+    </div>
+
+    <!-- ── Round tabs ────────────────────────────────────────────────────── -->
+    <div class="round-tabs">
+      <button class="round-tab active" data-round="champion">Champion</button>
+      <button class="round-tab" data-round="final">Final</button>
+      <button class="round-tab" data-round="sf">Semi-final</button>
+      <button class="round-tab" data-round="qf">Quarter-final</button>
+      <button class="round-tab" data-round="r16">Round of 16</button>
+      <button class="round-tab" data-round="r32">Qualify</button>
+    </div>
+
+    <!-- ── Leaderboard ───────────────────────────────────────────────────── -->
+    <div id="bracketContent">
+      <div class="loading-msg">Waiting for simulation…</div>
+    </div>
+
+  </div>
+</main>
+
+<script type="module">
+import { loadData, refreshData, getPlayedMatches, getRemainingMatches, getAllMatches } from "./js/data.js";
+import { initRatings } from "./js/ratings.js";
+import { expectedGoals, scorelineMatrix, matchOdds, mostLikelyScore } from "./js/model.js";
+import { rankGroup } from "./js/tournament.js";
+import { DEFAULTS as MODEL_DEFAULTS } from "./js/model.js";
+
+const statusDot  = document.getElementById("statusDot");
+const statusText = document.getElementById("statusText");
+const fixtureList = document.getElementById("fixtureList");
+const errorBanner = document.getElementById("errorBanner");
+const matchCountEl = document.getElementById("matchCount");
+
+let activeFilter = "all";
+let _ratings  = null;   // processed ratings for UI match predictions
+let _eloRaw   = null;   // raw elo-seed.json content for the worker
+let _simResult = null;  // latest Monte Carlo output { N, teams }
+let _simWorker = null;  // active Web Worker instance
+
+function setStatus(type, msg) {
+  statusDot.className = `dot ${type}`;
+  statusText.textContent = msg;
+}
+
+function showError(msg) {
+  errorBanner.style.display = "block";
+  errorBanner.textContent = msg;
+}
+
+// ---- Flags ------------------------------------------------------------------
+
+const TEAM_FLAGS = {
+  "Mexico":               "mx",  "South Africa":         "za",
+  "Korea Republic":       "kr",  "Czech Republic":       "cz",
+  "Canada":               "ca",  "Bosnia & Herzegovina": "ba",
+  "Qatar":                "qa",  "Switzerland":          "ch",
+  "Brazil":               "br",  "Morocco":              "ma",
+  "Haiti":                "ht",  "Scotland":             "gb-sct",
+  "USA":                  "us",  "Paraguay":             "py",
+  "Australia":            "au",  "Turkey":               "tr",
+  "Germany":              "de",  "Curaçao":              "cw",
+  "Côte d'Ivoire":        "ci",  "Ecuador":              "ec",
+  "Netherlands":          "nl",  "Japan":                "jp",
+  "Sweden":               "se",  "Tunisia":              "tn",
+  "Belgium":              "be",  "Egypt":                "eg",
+  "IR Iran":              "ir",  "New Zealand":          "nz",
+  "Spain":                "es",  "Cape Verde":           "cv",
+  "Saudi Arabia":         "sa",  "Uruguay":              "uy",
+  "France":               "fr",  "Senegal":              "sn",
+  "Iraq":                 "iq",  "Norway":               "no",
+  "Argentina":            "ar",  "Algeria":              "dz",
+  "Austria":              "at",  "Jordan":               "jo",
+  "Portugal":             "pt",  "DR Congo":             "cd",
+  "Uzbekistan":           "uz",  "Colombia":             "co",
+  "England":              "gb-eng", "Croatia":            "hr",
+  "Ghana":                "gh",  "Panama":               "pa",
+};
+
+const FLAG_BASE = "https://flagcdn.com/w40";
+
+function flagImg(team, sm = false) {
+  const code = TEAM_FLAGS[team];
+  if (!code) return "";
+  return `<img src="${FLAG_BASE}/${code}.png" alt="${team} flag" class="flag${sm ? " flag-sm" : ""}" loading="lazy" onerror="this.style.display='none'">`;
+}
+
+// ---- Predictions ------------------------------------------------------------
+
+async function loadEloSeed() {
+  try {
+    _eloRaw  = await fetch("./data/elo-seed.json").then(r => r.json());
+    _ratings = initRatings(_eloRaw);
+  } catch (e) {
+    console.warn("Could not load Elo seed:", e.message);
+  }
+}
+
+// ── Monte Carlo Web Worker ───────────────────────────────────────────────────
+
+function runMonteCarlo(allMatches, params = {}, N = 10000) {
+  if (!_eloRaw) return;
+  if (_simWorker) _simWorker.terminate();
+
+  const hint   = document.getElementById("simHint");
+  const status = document.getElementById("simStatus");
+  const msg    = `Running ${N.toLocaleString()} simulations…`;
+  if (hint)   hint.textContent   = msg;
+  if (status) status.textContent = msg;
+
+  _simWorker = new Worker("./js/simworker.js", { type: "module" });
+
+  _simWorker.onmessage = ({ data }) => {
+    if (data.type === "result") {
+      _simResult = data.data;
+      _simWorker = null;
+      const done = `Done · ${_simResult.N.toLocaleString()} simulations · Elo seed ratings`;
+      if (hint)   hint.textContent   = done;
+      if (status) status.textContent = done;
+      try {
+        renderStandings(getAllMatches());
+        renderBracket();
+      } catch { /* data not ready */ }
+    } else if (data.type === "error") {
+      console.warn("Simulation error:", data.message);
+      const err = "Simulation unavailable";
+      if (hint)   hint.textContent   = err;
+      if (status) status.textContent = err;
+    }
+  };
+
+  _simWorker.postMessage({
+    type: "run",
+    allMatches,
+    eloSeedData: _eloRaw,
+    params: { ...MODEL_DEFAULTS, ...params },
+    N,
+    seed: 20260612,
+  });
+}
+
+const MEXICO_GROUNDS = ["mexico city", "guadalajara", "monterrey", "zapopan"];
+const CANADA_GROUNDS = ["vancouver", "toronto"];
+
+function detectHostTeam(homeTeam, awayTeam, venue) {
+  if (!venue) return null;
+  const v = venue.toLowerCase();
+  let country = "USA";
+  if (MEXICO_GROUNDS.some(g => v.includes(g))) country = "Mexico";
+  else if (CANADA_GROUNDS.some(g => v.includes(g))) country = "Canada";
+  if (homeTeam === country) return homeTeam;
+  if (awayTeam === country) return awayTeam;
+  return null; // host nations match not hosted in their own country, or non-host team
+}
+
+function predictMatch(m) {
+  if (!_ratings || !_ratings[m.home] || !_ratings[m.away]) return null;
+  try {
+    const hostTeam = detectHostTeam(m.home, m.away, m.venue);
+    const ctx = hostTeam ? { homeTeam: hostTeam } : {};
+    const { lambdaA, lambdaB } = expectedGoals(m.home, m.away, _ratings, {}, ctx);
+    const matrix = scorelineMatrix(lambdaA, lambdaB);
+    const odds = matchOdds(matrix);
+    const best = mostLikelyScore(matrix);
+    return { lambdaA, lambdaB, odds, best };
+  } catch {
+    return null;
+  }
+}
+
+function oddsBarHtml(pred) {
+  const { home, draw, away } = pred.odds;
+  const hp = Math.round(home * 100);
+  const dp = Math.round(draw * 100);
+  const ap = Math.round(away * 100);
+  const { lambdaA, lambdaB, best } = pred;
+  return `
+    <div class="odds-bar">
+      <div class="odds-seg odds-home" style="flex:${home}" title="Home win ${hp}%"><span>${hp}%</span></div>
+      <div class="odds-seg odds-draw" style="flex:${draw}" title="Draw ${dp}%"><span>${dp}%</span></div>
+      <div class="odds-seg odds-away" style="flex:${away}" title="Away win ${ap}%"><span>${ap}%</span></div>
+    </div>
+    <div class="xg-line">${lambdaA.toFixed(1)} xG — ${lambdaB.toFixed(1)} xG · likely ${best.homeGoals}–${best.awayGoals}</div>`;
+}
+
+// ---- Fixture rendering ------------------------------------------------------
+
+function formatDate(isoStr) {
+  if (!isoStr) return "";
+  try {
+    const d = new Date(isoStr);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", weekday: "short" });
+  } catch { return isoStr; }
+}
+
+function renderFixtures(matches) {
+  errorBanner.style.display = "none";
+  const filtered = matches.filter(m => {
+    if (activeFilter === "played")   return m.score !== null;
+    if (activeFilter === "upcoming") return m.score === null;
+    return true;
+  });
+
+  matchCountEl.textContent = `${filtered.length} match${filtered.length !== 1 ? "es" : ""}`;
+
+  if (filtered.length === 0) {
+    fixtureList.innerHTML = `<div class="loading-msg">No matches to show.</div>`;
+    return;
+  }
+
+  const byGroup = {};
+  for (const m of filtered) {
+    const key = m.group || "?";
+    (byGroup[key] = byGroup[key] || []).push(m);
+  }
+
+  const roundOrder = ["A","B","C","D","E","F","G","H","I","J","K","L",
+                      "R32","R16","QF","SF","3rd","Final"];
+
+  const sortedKeys = Object.keys(byGroup).sort((a, b) => {
+    const ai = roundOrder.indexOf(a), bi = roundOrder.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+
+  let html = "";
+  for (const key of sortedKeys) {
+    const label = key.length === 1 ? `Group ${key}` : key;
+    html += `<div class="section-title">${label}</div><div class="fixture-grid">`;
+    for (const m of byGroup[key]) {
+      const played = m.score !== null;
+      const pred   = !played ? predictMatch(m) : null;
+      const scoreHtml = played
+        ? `<div class="score-value">${m.score.ft_home} – ${m.score.ft_away}</div>`
+        : `<div class="score-dash">vs</div>`;
+      const etHtml = played && m.score.et_home != null
+        ? `<div style="font-size:10px;color:var(--text-muted)">AET ${m.score.et_home}–${m.score.et_away}</div>`
+        : "";
+      html += `
+        <div class="fixture-card ${played ? "played" : "upcoming"}">
+          <div class="card-main">
+            <div class="team home">
+              <span class="team-name">${m.home}</span>
+              ${flagImg(m.home)}
+            </div>
+            <div class="scoreline">
+              ${scoreHtml}
+              ${etHtml}
+              <div class="match-meta">${formatDate(m.date)}</div>
+            </div>
+            <div class="team away">
+              ${flagImg(m.away)}
+              <span class="team-name">${m.away}</span>
+            </div>
+          </div>
+          ${pred ? oddsBarHtml(pred) : ""}
+        </div>`;
+    }
+    html += `</div>`;
+  }
+  fixtureList.innerHTML = html;
+}
+
+// ---- Standings rendering ----------------------------------------------------
+
+function getGroupTeams(allMatches) {
+  const groups = {};
+  for (const m of allMatches) {
+    if (!/^[A-L]$/.test(m.group)) continue;
+    for (const team of [m.home, m.away]) {
+      if (team && !/^[0-9WL]/.test(team)) {
+        if (!groups[m.group]) groups[m.group] = new Set();
+        groups[m.group].add(team);
+      }
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(groups).map(([g, s]) => [g, [...s]])
+  );
+}
+
+function champPctHtml(teamName) {
+  if (!_simResult) return `<td class="st-champ st-champ-wait">–</td>`;
+  const p = _simResult.teams[teamName]?.champion ?? 0;
+  const pct = (p * 100).toFixed(p >= 0.1 ? 1 : 2);
+  // colour scale: green ≥10%, amber 3-10%, dim <3%
+  const cls = p >= 0.10 ? "st-champ-hi" : p >= 0.03 ? "st-champ-mid" : "st-champ-lo";
+  return `<td class="st-champ ${cls}" title="${teamName} champion probability">${pct}%</td>`;
+}
+
+function renderStandings(allMatches) {
+  const groupTeams = getGroupTeams(allMatches);
+  const hasSim = !!_simResult;
+  let html = '<div class="standings-grid">';
+
+  for (const g of "ABCDEFGHIJKL") {
+    const teams = groupTeams[g] || [];
+    html += `<div class="group-card">
+      <div class="group-card-hdr">Group ${g}</div>`;
+
+    if (teams.length === 0) {
+      html += `<div style="color:var(--text-muted);font-size:12px;padding:10px">Data pending</div>`;
+    } else {
+      const ranked = rankGroup(g, teams, allMatches);
+      html += `<table class="st-table">
+        <thead><tr>
+          <th></th><th class="st-team-hdr"></th>
+          <th title="Played">P</th><th title="Won">W</th>
+          <th title="Drawn">D</th><th title="Lost">L</th>
+          <th title="Goal Difference">GD</th><th title="Points">Pts</th>
+          <th class="st-champ" title="Champion probability (Monte Carlo)">W%</th>
+        </tr></thead><tbody>`;
+
+      ranked.forEach((s, i) => {
+        const pos = i + 1;
+        const cls = pos <= 2 ? "st-qualify" : pos === 3 ? "st-third" : "st-elim";
+        const gd  = (s.gd > 0 ? "+" : "") + s.gd;
+        html += `<tr class="${cls}">
+          <td class="st-pos">${pos}</td>
+          <td class="st-team"><div class="st-team-inner">${flagImg(s.team, true)}<span>${s.team}</span></div></td>
+          <td>${s.played}</td><td>${s.won}</td><td>${s.drawn}</td><td>${s.lost}</td>
+          <td>${gd}</td><td class="st-pts">${s.points}</td>
+          ${champPctHtml(s.team)}
+        </tr>`;
+      });
+
+      html += `</tbody></table>`;
+    }
+
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  document.getElementById("standingsGrid").innerHTML = html;
+}
+
+// ── Bracket leaderboard ───────────────────────────────────────────────────────
+
+let _teamGroups = {}; // { "Spain": "H", "France": "I", … }
+
+function buildTeamGroupMap(allMatches) {
+  _teamGroups = {};
+  for (const m of allMatches) {
+    if (!/^[A-L]$/.test(m.group)) continue;
+    if (m.home && !/^[0-9WL]/.test(m.home)) _teamGroups[m.home] = m.group;
+    if (m.away && !/^[0-9WL]/.test(m.away)) _teamGroups[m.away] = m.group;
+  }
+}
+
+const ROUND_LABELS_BRACKET = {
+  champion: "Champion",
+  final:    "Reach Final",
+  sf:       "Reach Semi-final",
+  qf:       "Reach Quarter-final",
+  r16:      "Reach Round of 16",
+  r32:      "Qualify from group",
+};
+
+function renderBracket() {
+  const el = document.getElementById("bracketContent");
+  if (!el) return;
+
+  if (!_simResult) {
+    el.innerHTML = `<div class="loading-msg">Running simulation…</div>`;
+    return;
+  }
+
+  const round = document.querySelector(".round-tab.active")?.dataset.round || "champion";
+  const label = ROUND_LABELS_BRACKET[round] || round;
+
+  const entries = Object.entries(_simResult.teams)
+    .map(([name, probs]) => ({ name, prob: probs[round] ?? 0 }))
+    .sort((a, b) => b.prob - a.prob);
+
+  const maxProb = entries[0]?.prob || 1;
+
+  let html = `<div class="lb-header">P(${label}) · ${_simResult.N.toLocaleString()} simulations</div>`;
+  html += `<div class="leaderboard">`;
+
+  entries.forEach(({ name, prob }, i) => {
+    const pct = prob >= 0.001
+      ? (prob * 100).toFixed(prob >= 0.099 ? 1 : 2) + "%"
+      : "<0.1%";
+    const barPct = (prob / maxProb * 100).toFixed(2);
+    const grp    = _teamGroups[name] || "?";
+    const podium = i === 0 ? "lb-gold" : i === 1 ? "lb-silver" : i === 2 ? "lb-bronze" : "";
+
+    html += `<div class="lb-row">
+      <span class="lb-rank ${podium}">${i + 1}</span>
+      <div class="lb-team">${flagImg(name)}<span class="lb-name">${name}</span></div>
+      <span class="lb-grp">Grp ${grp}</span>
+      <div class="lb-bar-wrap"><div class="lb-bar" style="width:${barPct}%"></div></div>
+      <span class="lb-pct">${pct}</span>
+    </div>`;
+  });
+
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+// ---- Bootstrap --------------------------------------------------------------
+
+async function doLoad(isRefresh = false) {
+  setStatus("loading", isRefresh ? "Refreshing…" : "Loading data…");
+  fixtureList.innerHTML = `<div class="loading-msg">${isRefresh ? "Refreshing…" : "Fetching fixtures…"}</div>`;
+  try {
+    const [state] = await Promise.all([
+      isRefresh ? refreshData() : loadData(),
+      _ratings === null ? loadEloSeed() : Promise.resolve(),
+    ]);
+    const all       = getAllMatches();
+    const played    = getPlayedMatches();
+    const remaining = getRemainingMatches();
+    setStatus("", `${played.length} played · ${remaining.length} remaining · source: ${state.source}`);
+    buildTeamGroupMap(all);
+    renderFixtures(all);
+    renderStandings(all);
+    renderBracket();
+    runMonteCarlo(all);
+  } catch (err) {
+    setStatus("error", "Data load failed");
+    showError(`Failed to load data: ${err.message}`);
+    fixtureList.innerHTML = `<div class="loading-msg">Could not load fixtures. Check network.</div>`;
+  }
+}
+
+// Filter buttons
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeFilter = btn.dataset.filter;
+    try { renderFixtures(getAllMatches()); } catch { /* not loaded yet */ }
+  });
+});
+
+// Refresh button
+document.getElementById("refreshBtn").addEventListener("click", () => doLoad(true));
+
+// Tabs
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.querySelectorAll("[id^='tab-']").forEach(el => el.style.display = "none");
+    const target = document.getElementById(`tab-${btn.dataset.tab}`);
+    if (target) target.style.display = "";
+  });
+});
+
+// Sliders — update displayed value in real time
+document.querySelectorAll(".slider-input").forEach(input => {
+  const valEl = document.querySelector(`.slider-val[data-for="${input.dataset.param}"]`);
+  input.addEventListener("input", () => {
+    if (!valEl) return;
+    const v = parseFloat(input.value);
+    valEl.textContent = input.dataset.param === "N"
+      ? v.toLocaleString()
+      : v.toFixed(2);
+  });
+});
+
+// Re-run button — collect slider params and restart simulation
+function getSliderParams() {
+  const params = {};
+  document.querySelectorAll(".slider-input").forEach(el => {
+    const key = el.dataset.param;
+    if (key !== "N") params[key] = parseFloat(el.value);
+  });
+  return params;
+}
+
+function getSliderN() {
+  const el = document.querySelector('.slider-input[data-param="N"]');
+  return el ? parseInt(el.value) : 10000;
+}
+
+document.getElementById("rerunBtn")?.addEventListener("click", () => {
+  try {
+    const all = getAllMatches();
+    runMonteCarlo(all, getSliderParams(), getSliderN());
+  } catch { /* data not loaded yet */ }
+});
+
+// Round tabs in bracket view
+document.querySelectorAll(".round-tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".round-tab").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderBracket();
+  });
+});
+
+doLoad();
+</script>
+</body>
+</html>
