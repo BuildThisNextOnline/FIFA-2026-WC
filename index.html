@@ -26,7 +26,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="fixtures">Fixtures</button>
     <button class="tab-btn" data-tab="standings">Standings</button>
-    <button class="tab-btn" data-tab="bracket">Bracket <span style="font-size:10px;color:var(--text-muted)">(v2)</span></button>
+    <button class="tab-btn" data-tab="bracket">Bracket</button>
   </div>
 
   <div id="tab-fixtures">
@@ -60,27 +60,27 @@
       <div class="sliders-title">Model Parameters</div>
       <div class="sliders-grid">
         <div class="slider-row">
-          <label class="slider-lbl" title="Host venue advantage added to expected goals (log scale)">Host bonus γ</label>
+          <label class="slider-lbl" title="Extra scoring boost for Mexico, USA, or Canada when playing at home. Default 0.30 means host teams score ~35% more goals on average. Slide to 0 if you think home advantage doesn't matter; slide up if you think it's decisive.">Home advantage</label>
           <input type="range" class="slider-input" data-param="gamma"     min="0"    max="0.60" step="0.05" value="0.30">
           <span  class="slider-val" data-for="gamma">0.30</span>
         </div>
         <div class="slider-row">
-          <label class="slider-lbl" title="Dixon-Coles low-score correction; more negative = more draws">DC corr. τ</label>
+          <label class="slider-lbl" title="Boosts the probability of 0-0 and 1-1 draws, correcting a known flaw in the basic goal model (it predicts too few draws). More negative = more draws. Set to 0 to use raw Poisson.">Low-score boost</label>
           <input type="range" class="slider-input" data-param="tau"       min="-0.30" max="0"   step="0.05" value="-0.10">
           <span  class="slider-val" data-for="tau">-0.10</span>
         </div>
         <div class="slider-row">
-          <label class="slider-lbl" title="Extra rest advantage per day (capped at 5 days)">Rest δ</label>
+          <label class="slider-lbl" title="Benefit to a team with more recovery days since their last match (capped at 5 days difference). Increase if you believe fatigue matters more.">Rest advantage</label>
           <input type="range" class="slider-input" data-param="delta"     min="0"    max="0.15" step="0.01" value="0.06">
           <span  class="slider-val" data-for="delta">0.06</span>
         </div>
         <div class="slider-row">
-          <label class="slider-lbl" title="Penalty for teams that went to extra time in their previous match">ET penalty</label>
+          <label class="slider-lbl" title="Penalty applied to teams whose previous match went to extra time or penalties (120 min of play). Increase if you think playing extra time has a big effect on the next match.">Extra-time fatigue</label>
           <input type="range" class="slider-input" data-param="etPenalty" min="0"    max="0.30" step="0.05" value="0.10">
           <span  class="slider-val" data-for="etPenalty">0.10</span>
         </div>
         <div class="slider-row">
-          <label class="slider-lbl" title="Number of Monte Carlo simulations (higher = more accurate, slower)">Simulations N</label>
+          <label class="slider-lbl" title="Number of full tournament simulations run. Higher = more accurate probabilities but slower. 10,000 is a good balance; use 50,000 for publication-quality numbers.">Simulations</label>
           <input type="range" class="slider-input" data-param="N"         min="1000" max="50000" step="1000" value="10000">
           <span  class="slider-val" data-for="N">10 000</span>
         </div>
@@ -258,19 +258,21 @@ function predictMatch(m) {
   }
 }
 
-function oddsBarHtml(pred) {
+function oddsBarHtml(pred, played = false) {
   const { home, draw, away } = pred.odds;
   const hp = Math.round(home * 100);
   const dp = Math.round(draw * 100);
   const ap = Math.round(away * 100);
   const { lambdaA, lambdaB, best } = pred;
+  const label = played ? `<div class="pred-label">Pre-match prediction</div>` : "";
   return `
+    ${label}
     <div class="odds-bar">
       <div class="odds-seg odds-home" style="flex:${home}" title="Home win ${hp}%"><span>${hp}%</span></div>
       <div class="odds-seg odds-draw" style="flex:${draw}" title="Draw ${dp}%"><span>${dp}%</span></div>
       <div class="odds-seg odds-away" style="flex:${away}" title="Away win ${ap}%"><span>${ap}%</span></div>
     </div>
-    <div class="xg-line">${lambdaA.toFixed(1)} xG — ${lambdaB.toFixed(1)} xG · likely ${best.homeGoals}–${best.awayGoals}</div>`;
+    <div class="xg-line">Predicted goals: ${lambdaA.toFixed(1)} – ${lambdaB.toFixed(1)} · likely ${best.homeGoals}–${best.awayGoals}</div>`;
 }
 
 // ---- Fixture rendering ------------------------------------------------------
@@ -321,7 +323,7 @@ function renderFixtures(matches) {
     html += `<div class="section-title">${label}</div><div class="fixture-grid">`;
     for (const m of byGroup[key]) {
       const played = m.score !== null;
-      const pred   = !played ? predictMatch(m) : null;
+      const pred   = predictMatch(m);
       const scoreHtml = played
         ? `<div class="score-value">${m.score.ft_home} – ${m.score.ft_away}</div>`
         : `<div class="score-dash">vs</div>`;
@@ -345,7 +347,7 @@ function renderFixtures(matches) {
               <span class="team-name">${m.away}</span>
             </div>
           </div>
-          ${pred ? oddsBarHtml(pred) : ""}
+          ${pred ? oddsBarHtml(pred, played) : ""}
         </div>`;
     }
     html += `</div>`;
