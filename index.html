@@ -650,7 +650,8 @@ function buildPredictedDraw(allMatches, params) {
         if (pred) {
           m.score = { ft_home: pred.best.homeGoals, ft_away: pred.best.awayGoals, et_home: null, et_away: null, pen_winner: null };
           m._predicted = true;
-          winners[m.id] = pred.odds.home >= pred.odds.away ? teamA : teamB;
+          m._winner = pred.odds.home >= pred.odds.away ? teamA : teamB;
+          winners[m.id] = m._winner;
         }
       }
     }
@@ -691,7 +692,7 @@ function renderBracketDraw(allMatches, params) {
   const SW = 124, SH = 26, TG = 2;   // slot width/height, team gap
   const RG = 16;                       // horizontal gap between rounds
   const MG = 14;                       // vertical gap between R32 matches
-  const PAD = 68;                      // top padding (leaves room for champion box)
+  const PAD = 28;                      // top padding (room for round labels)
   const STEP = SW + RG;                // x step per round
 
   // Assign y-coords from leaf (R32) positions upward
@@ -723,16 +724,18 @@ function renderBracketDraw(allMatches, params) {
   const totalH = PAD + nLeaves * (SH * 2 + TG + MG) - MG + PAD;
   const ROOT_MID_Y = leftRoot ? leftRoot.midY : totalH / 2;
 
-  // Final sits at center x; 4 rounds on each side
-  const FINAL_X = 4 * STEP;
-  const TOTAL_W = 2 * FINAL_X + SW;
+  // Layout: R32|R16|QF|SF|FINAL|CHAMPION|FINAL|SF|QF|R16|R32
+  const FINAL_X       = 4 * STEP;             // left FINAL column (finalist slot)
+  const CHAMP_X       = FINAL_X + STEP;       // CHAMPION column (= FINAL_X + SW + RG)
+  const RIGHT_FINAL_X = FINAL_X + 2 * STEP;   // right FINAL column (finalist slot)
+  const TOTAL_W       = RIGHT_FINAL_X + 4 * STEP + SW;
 
   // Assign x-coords
   function assignX(node, isLeft, depth) {
     if (!node) return;
     node.x = isLeft
       ? FINAL_X - (depth + 1) * STEP
-      : FINAL_X + SW + RG + depth * STEP;
+      : RIGHT_FINAL_X + (depth + 1) * STEP;
     assignX(node.top, isLeft, depth + 1);
     assignX(node.bot, isLeft, depth + 1);
   }
@@ -793,15 +796,15 @@ function renderBracketDraw(allMatches, params) {
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${TOTAL_W}" height="${totalH}" style="display:block;font-family:Inter,system-ui,sans-serif">`;
   svg += `<rect width="${TOTAL_W}" height="${totalH}" fill="${C.bg}"/>`;
 
-  // Round labels
-  const roundLabels = ["SF","QF","R16","R32"];
-  for (let d = 0; d < 4; d++) {
-    const lx = FINAL_X - (d+1)*STEP + SW/2;
-    const rx = FINAL_X + SW + RG + d*STEP + SW/2;
-    svg += `<text x="${lx}" y="13" fill="${C.muted}" font-size="9" text-anchor="middle" text-transform="uppercase">${roundLabels[d]}</text>`;
+  // Round labels: FINAL, SF, QF, R16, R32 on each side + CHAMPION in center
+  const roundLabels = ["FINAL","SF","QF","R16","R32"];
+  for (let d = 0; d < 5; d++) {
+    const lx = FINAL_X - d*STEP + SW/2;
+    const rx = RIGHT_FINAL_X + d*STEP + SW/2;
+    svg += `<text x="${lx}" y="13" fill="${C.muted}" font-size="9" text-anchor="middle">${roundLabels[d]}</text>`;
     svg += `<text x="${rx}" y="13" fill="${C.muted}" font-size="9" text-anchor="middle">${roundLabels[d]}</text>`;
   }
-  svg += `<text x="${FINAL_X+SW/2}" y="13" fill="${C.muted}" font-size="9" text-anchor="middle">FINAL</text>`;
+  svg += `<text x="${CHAMP_X+SW/2}" y="13" fill="${C.muted}" font-size="9" text-anchor="middle">CHAMPION</text>`;
 
   function renderNode(node, isLeft) {
     if (!node) return "";
@@ -848,47 +851,51 @@ function renderBracketDraw(allMatches, params) {
   svg += renderNode(leftRoot,  true);
   svg += renderNode(rightRoot, false);
 
-  // Final match
-  const fy1 = ROOT_MID_Y - SH - TG/2;
-  const fy2 = ROOT_MID_Y + TG/2;
-  const fp = !!finalM.score;
-  const [fhw, faw] = matchWinner(finalM);
+  // ── Center columns: left FINAL | CHAMPION | right FINAL ───────────────────
+  const fp      = !!finalM.score;
   const fp_pred = !!finalM._predicted;
-  const fScoreA = (fp && !fp_pred) ? finalM.score.ft_home : null;
-  const fScoreB = (fp && !fp_pred) ? finalM.score.ft_away : null;
-  svg += slot(FINAL_X, fy1, finalM._home || finalM.home, fScoreA, !fp_pred && fhw, fp_pred);
-  svg += slot(FINAL_X, fy2, finalM._away || finalM.away, fScoreB, !fp_pred && faw, fp_pred);
+  const leftFinalist  = finalM._home || finalM.home;
+  const rightFinalist = finalM._away || finalM.away;
 
-  // Champion box — shown above Final when a winner is known/predicted
-  const champTeam = fp
-    ? (finalM.score.pen_winner
+  // Champion: use odds-based _winner (prediction) or score/pen_winner (real)
+  const champTeam = finalM._winner
+    || (fp ? (finalM.score.pen_winner
         || ((finalM.score.et_home ?? finalM.score.ft_home) > (finalM.score.et_away ?? finalM.score.ft_away)
-            ? (finalM._home || finalM.home)
-            : (finalM._away || finalM.away)))
-    : null;
-  if (champTeam) {
-    const cx = FINAL_X + SW / 2;
-    const cy = fy1 - 36;
-    const cw = SW + 24, ch = 26;
+            ? leftFinalist : rightFinalist))
+        : null);
+
+  const fySlot = ROOT_MID_Y - SH / 2;   // single slot y, centered at ROOT_MID_Y
+
+  // Left finalist slot
+  svg += slot(FINAL_X, fySlot, leftFinalist, null,
+              !fp_pred && champTeam === leftFinalist, fp_pred);
+
+  // Champion slot (gold or green)
+  {
     const gold = fp_pred ? "#f59e0b" : "#22c55e";
-    svg += `<rect x="${cx - cw/2}" y="${cy}" width="${cw}" height="${ch}" rx="5" fill="rgba(245,158,11,0.13)" stroke="${gold}" stroke-width="1.5"/>`;
-    svg += `<text x="${cx}" y="${cy + 10}" fill="${gold}" font-size="9" font-weight="700" text-anchor="middle" text-transform="uppercase" letter-spacing="1">🏆 ${fp_pred ? "PREDICTED CHAMPION" : "CHAMPION"}</text>`;
-    svg += `<text x="${cx}" y="${cy + 21}" fill="#f8fafc" font-size="12" font-weight="600" text-anchor="middle">${champTeam}</text>`;
+    const fill = fp_pred ? "rgba(245,158,11,0.18)" : "rgba(34,197,94,0.18)";
+    const cy = fySlot;
+    if (champTeam) {
+      svg += `<rect x="${CHAMP_X}" y="${cy}" width="${SW}" height="${SH}" rx="5" fill="${fill}" stroke="${gold}" stroke-width="2"/>`;
+      svg += `<text x="${CHAMP_X+SW/2}" y="${cy+9}" fill="${gold}" font-size="8" font-weight="700" text-anchor="middle">🏆 CHAMPION</text>`;
+      svg += `<text x="${CHAMP_X+SW/2}" y="${cy+21}" fill="#f8fafc" font-size="12" font-weight="600" text-anchor="middle">${teamName(champTeam)}</text>`;
+    } else {
+      svg += `<rect x="${CHAMP_X}" y="${cy}" width="${SW}" height="${SH}" rx="5" fill="${C.slot}" stroke="${C.border}" stroke-width="1"/>`;
+      svg += `<text x="${CHAMP_X+SW/2}" y="${cy+17}" fill="${C.ph}" font-size="10" text-anchor="middle">🏆 TBD</text>`;
+    }
   }
 
-  // Lines from SF to Final
-  if (leftRoot) {
-    const jx = FINAL_X - RG/2;
-    svg += `<line x1="${FINAL_X}"  y1="${ROOT_MID_Y}" x2="${jx}" y2="${ROOT_MID_Y}" stroke="${C.line}" stroke-width="1"/>`;
-    svg += `<line x1="${jx}" y1="${leftRoot.midY}"  x2="${jx}" y2="${ROOT_MID_Y}"    stroke="${C.line}" stroke-width="1"/>`;
-    svg += `<line x1="${leftRoot.x+SW}" y1="${leftRoot.midY}" x2="${jx}" y2="${leftRoot.midY}" stroke="${C.line}" stroke-width="1"/>`;
-  }
-  if (rightRoot) {
-    const jx = FINAL_X + SW + RG/2;
-    svg += `<line x1="${FINAL_X+SW}" y1="${ROOT_MID_Y}" x2="${jx}" y2="${ROOT_MID_Y}" stroke="${C.line}" stroke-width="1"/>`;
-    svg += `<line x1="${jx}" y1="${rightRoot.midY}" x2="${jx}" y2="${ROOT_MID_Y}"     stroke="${C.line}" stroke-width="1"/>`;
-    svg += `<line x1="${rightRoot.x}" y1="${rightRoot.midY}" x2="${jx}" y2="${rightRoot.midY}" stroke="${C.line}" stroke-width="1"/>`;
-  }
+  // Right finalist slot
+  svg += slot(RIGHT_FINAL_X, fySlot, rightFinalist, null,
+              !fp_pred && champTeam === rightFinalist, fp_pred);
+
+  // Connecting lines: SF→FINAL→CHAMPION→FINAL→SF (all horizontal at ROOT_MID_Y)
+  if (leftRoot)
+    svg += `<line x1="${leftRoot.x+SW}" y1="${ROOT_MID_Y}" x2="${FINAL_X}" y2="${ROOT_MID_Y}" stroke="${C.line}" stroke-width="1"/>`;
+  svg += `<line x1="${FINAL_X+SW}" y1="${ROOT_MID_Y}" x2="${CHAMP_X}" y2="${ROOT_MID_Y}" stroke="${C.line}" stroke-width="1"/>`;
+  svg += `<line x1="${CHAMP_X+SW}" y1="${ROOT_MID_Y}" x2="${RIGHT_FINAL_X}" y2="${ROOT_MID_Y}" stroke="${C.line}" stroke-width="1"/>`;
+  if (rightRoot)
+    svg += `<line x1="${RIGHT_FINAL_X+SW}" y1="${ROOT_MID_Y}" x2="${rightRoot.x}" y2="${ROOT_MID_Y}" stroke="${C.line}" stroke-width="1"/>`;
 
   svg += "</svg>";
   el.innerHTML = `<div style="overflow-x:auto;padding-bottom:8px">${svg}</div>`;
