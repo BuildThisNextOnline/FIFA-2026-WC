@@ -525,7 +525,7 @@ function renderBracket() {
     const barPct = (prob / maxProb * 100).toFixed(2);
     const grp    = _teamGroups[name] || "?";
     const podium = rank === 1 ? "lb-gold" : rank === 2 ? "lb-silver" : rank === 3 ? "lb-bronze" : "";
-    return `<div class="lb-row${qualified ? " lb-qualified" : "lb-below"}">
+    return `<div class="lb-row${qualified ? " lb-qualified" : ""}">
       <span class="lb-rank ${podium}">${rank}</span>
       <div class="lb-team">${flagImg(name)}<span class="lb-name">${name}</span></div>
       <span class="lb-grp">Grp ${grp}</span>
