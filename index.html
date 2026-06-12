@@ -325,12 +325,16 @@ function oddsBarHtml(pred, played = false) {
 
 // ---- Fixture rendering ------------------------------------------------------
 
-function formatDate(isoStr) {
-  if (!isoStr) return "";
-  try {
-    const d = new Date(isoStr);
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", weekday: "short" });
-  } catch { return isoStr; }
+// Convert "13:00 UTC-6" → "19:00 GMT"
+function toGMT(timeStr) {
+  if (!timeStr) return "";
+  const m = timeStr.match(/^(\d{1,2}):(\d{2})\s*UTC([+-]\d+)$/);
+  if (!m) return timeStr;
+  const localMins = parseInt(m[1]) * 60 + parseInt(m[2]);
+  const offsetMins = parseInt(m[3]) * 60;
+  const gmtMins = ((localMins - offsetMins) % 1440 + 1440) % 1440;
+  const h = Math.floor(gmtMins / 60), min = gmtMins % 60;
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")} GMT`;
 }
 
 function renderFixtures(matches, params = {}) {
@@ -348,7 +352,6 @@ function renderFixtures(matches, params = {}) {
     return;
   }
 
-  // Sort chronologically
   const sorted = [...filtered].sort((a, b) => {
     if (!a.date && !b.date) return 0;
     if (!a.date) return 1;
@@ -356,46 +359,60 @@ function renderFixtures(matches, params = {}) {
     return a.date.localeCompare(b.date);
   });
 
-  let html = `<div class="fixture-grid-4">`;
-  let lastDateKey = null;
-
+  // Group by calendar date
+  const byDate = [];
+  let lastKey = null;
   for (const m of sorted) {
-    const dateKey = m.date ? m.date.slice(0, 10) : null;
-    if (dateKey !== lastDateKey) {
-      const hdr = dateKey
-        ? new Date(dateKey + "T12:00:00").toLocaleDateString("en-US",
-            { weekday: "short", month: "short", day: "numeric" })
-        : "TBD";
-      html += `<div class="fx-date-sep">${hdr}</div>`;
-      lastDateKey = dateKey;
+    const key = m.date ? m.date.slice(0, 10) : "TBD";
+    if (key !== lastKey) { byDate.push({ key, matches: [] }); lastKey = key; }
+    byDate[byDate.length - 1].matches.push(m);
+  }
+
+  let html = `<div class="fixture-grid-5">`;
+
+  for (const { key, matches: dayMatches } of byDate) {
+    const rowSpan = Math.ceil(dayMatches.length / 4);
+    const dateLabel = key === "TBD" ? "TBD"
+      : (() => {
+          const d = new Date(key + "T12:00:00");
+          const wd = d.toLocaleDateString("en-US", { weekday: "short" });
+          const md = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          return `${wd}<br>${md}`;
+        })();
+
+    html += `<div class="fx-date-label" style="grid-row:span ${rowSpan}">${dateLabel}</div>`;
+
+    for (const m of dayMatches) {
+      const played   = m.score !== null;
+      const pred     = predictMatch(m, params);
+      const showPred = pred && viewMode === "prediction";
+      const timeLabel = toGMT(m.time);
+
+      const scoreText = played
+        ? `${m.score.ft_home}–${m.score.ft_away}`
+        : (showPred ? `${pred.best.homeGoals}–${pred.best.awayGoals}` : "vs");
+
+      const oddsHtml = showPred ? `
+        <span class="fx-odds">
+          <span class="fx-h">${Math.round(pred.odds.home * 100)}</span><span class="fx-d">${Math.round(pred.odds.draw * 100)}</span><span class="fx-a">${Math.round(pred.odds.away * 100)}</span>
+        </span>` : "";
+
+      html += `<div class="fx-row ${played ? "played" : ""}${showPred ? " has-pred" : ""}">
+        ${timeLabel ? `<span class="fx-time">${timeLabel}</span>` : ""}
+        <span class="fx-team">${flagImg(m.home, true)}<span class="fx-name">${m.home}</span></span>
+        <span class="fx-score">${scoreText}</span>
+        <span class="fx-team fx-away"><span class="fx-name">${m.away}</span>${flagImg(m.away, true)}</span>
+        ${oddsHtml}
+      </div>`;
     }
 
-    const played   = m.score !== null;
-    const pred     = predictMatch(m, params);
-    const showPred = pred && viewMode === "prediction";
-
-    // Short date "Jun 12" for compact card display
-    const shortDate = m.date ? (() => {
-      try { return new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
-      catch { return m.date.slice(5, 10); }
-    })() : "";
-
-    const scoreText = played
-      ? `${m.score.ft_home}–${m.score.ft_away}`
-      : (showPred ? `${pred.best.homeGoals}–${pred.best.awayGoals}` : "vs");
-
-    const oddsHtml = showPred ? `
-      <span class="fx-odds">
-        <span class="fx-h">${Math.round(pred.odds.home * 100)}</span><span class="fx-d">${Math.round(pred.odds.draw * 100)}</span><span class="fx-a">${Math.round(pred.odds.away * 100)}</span>
-      </span>` : "";
-
-    html += `<div class="fx-row ${played ? "played" : ""}${showPred ? " has-pred" : ""}">
-      <span class="fx-date">${shortDate}</span>
-      <span class="fx-team">${flagImg(m.home, true)}<span class="fx-name">${m.home}</span></span>
-      <span class="fx-score">${scoreText}</span>
-      <span class="fx-team fx-away"><span class="fx-name">${m.away}</span>${flagImg(m.away, true)}</span>
-      ${oddsHtml}
-    </div>`;
+    // Pad incomplete row so the grid stays aligned
+    const remainder = dayMatches.length % 4;
+    if (remainder !== 0) {
+      for (let i = 0; i < 4 - remainder; i++) {
+        html += `<div class="fx-pad"></div>`;
+      }
+    }
   }
 
   html += `</div>`;
