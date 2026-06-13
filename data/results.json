@@ -54,5 +54,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "B_7",
+    "group": "B",
+    "home": "Qatar",
+    "away": "Switzerland",
+    "date": "2026-06-13",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
