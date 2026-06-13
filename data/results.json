@@ -40,5 +40,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "D_18",
+    "group": "D",
+    "home": "USA",
+    "away": "Paraguay",
+    "date": "2026-06-12",
+    "score": {
+      "ft_home": 4,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
