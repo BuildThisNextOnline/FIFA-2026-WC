@@ -110,5 +110,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "E_24",
+    "group": "E",
+    "home": "Germany",
+    "away": "Curaçao",
+    "date": "2026-06-14",
+    "score": {
+      "ft_home": 7,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
