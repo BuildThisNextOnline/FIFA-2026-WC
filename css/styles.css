@@ -853,6 +853,30 @@ main { padding: 0 24px 24px; }
   .lb-row { grid-template-columns: 28px 1fr 44px 80px 44px; }
 }
 
+@media (max-width: 500px) {
+  /* Fixtures: switch from grid to block so each match gets full width */
+  .fixture-grid-5 {
+    display: block;
+  }
+  .fx-date-label {
+    display: block;
+    text-align: left;
+    border-right: none;
+    border-bottom: 2px solid var(--border);
+    border-top: 1px solid var(--border);
+    padding: 5px 4px;
+    margin: 6px 0 3px;
+    font-size: 11px;
+    white-space: normal;
+  }
+  .fx-date-label:first-child { margin-top: 0; border-top: none; }
+  .fx-pad { display: none; }
+  .fx-row { margin-bottom: 3px; }
+  .fx-name { max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Header: stack mode buttons vertically */
+  .hdr-mode-btn { font-size: 14px; }
+}
+
 /* view-toggle div no longer rendered — keep .view-btn for JS compat */
 .view-toggle { display: none; }
 .view-btn { /* base — hdr-mode-btn overrides in header */ }
