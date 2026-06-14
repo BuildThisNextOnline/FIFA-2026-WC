@@ -96,5 +96,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "D_19",
+    "group": "D",
+    "home": "Australia",
+    "away": "Turkey",
+    "date": "2026-06-13",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
