@@ -82,5 +82,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "C_13",
+    "group": "C",
+    "home": "Haiti",
+    "away": "Scotland",
+    "date": "2026-06-13",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
