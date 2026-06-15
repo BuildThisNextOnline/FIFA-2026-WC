@@ -168,6 +168,20 @@
     }
   },
   {
+    "id": "G_36",
+    "group": "G",
+    "home": "Belgium",
+    "away": "Egypt",
+    "date": "2026-06-15",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "H_42",
     "group": "H",
     "home": "Spain",
