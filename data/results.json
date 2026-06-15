@@ -126,6 +126,20 @@
     }
   },
   {
+    "id": "E_25",
+    "group": "E",
+    "home": "Ivory Coast",
+    "away": "Ecuador",
+    "date": "2026-06-14",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "F_30",
     "group": "F",
     "home": "Netherlands",
