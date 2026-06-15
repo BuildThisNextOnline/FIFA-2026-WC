@@ -166,5 +166,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "H_42",
+    "group": "H",
+    "home": "Spain",
+    "away": "Cape Verde",
+    "date": "2026-06-15",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
