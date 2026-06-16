@@ -222,5 +222,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "I_48",
+    "group": "I",
+    "home": "France",
+    "away": "Senegal",
+    "date": "2026-06-16",
+    "score": {
+      "ft_home": 3,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
