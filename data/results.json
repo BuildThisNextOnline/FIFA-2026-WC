@@ -292,5 +292,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "L_66",
+    "group": "L",
+    "home": "England",
+    "away": "Croatia",
+    "date": "2026-06-17",
+    "score": {
+      "ft_home": 4,
+      "ft_away": 2,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
