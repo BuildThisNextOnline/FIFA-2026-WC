@@ -582,6 +582,9 @@ function buildPredictedDraw(allMatches, params) {
     return null;
   }
 
+  // Round → the sim key that the *winner* of this round reaches next
+  const NEXT_SIM_ROUND = { R32: "r16", R16: "qf", QF: "sf", SF: "final", Final: "champion" };
+
   // Keep m.home/m.away as original placeholders (needed by resolveW in renderBracketDraw).
   // Store resolved display names in m._home/_away instead.
   for (const round of ["R32","R16","QF","SF","Final"]) {
@@ -596,13 +599,21 @@ function buildPredictedDraw(allMatches, params) {
         const winner = m.score.pen_winner || (hs > as ? (teamA || m.home) : (teamB || m.away));
         winners[m.id] = winner;
       } else if (teamA && teamB) {
-        const pred = predictMatch({ ...m, home: teamA, away: teamB }, params);
-        if (pred) {
-          m.score = { ft_home: pred.best.homeGoals, ft_away: pred.best.awayGoals, et_home: null, et_away: null, pen_winner: null };
-          m._predicted = true;
-          m._winner = pred.odds.home >= pred.odds.away ? teamA : teamB;
-          winners[m.id] = m._winner;
+        // Prefer simulation probabilities to stay consistent with Stage Probabilities tab.
+        // Fall back to Poisson odds when sim hasn't run yet.
+        const simKey = NEXT_SIM_ROUND[round];
+        const simA = _simResult?.teams[teamA]?.[simKey] ?? null;
+        const simB = _simResult?.teams[teamB]?.[simKey] ?? null;
+        let winner;
+        if (simA !== null && simB !== null) {
+          winner = simA >= simB ? teamA : teamB;
+        } else {
+          const pred = predictMatch({ ...m, home: teamA, away: teamB }, params);
+          winner = pred ? (pred.odds.home >= pred.odds.away ? teamA : teamB) : teamA;
         }
+        m._predicted = true;
+        m._winner = winner;
+        winners[m.id] = winner;
       }
     }
   }
