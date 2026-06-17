@@ -45,20 +45,21 @@ header {
   border-right: 1px solid var(--border);
 }
 .hdr-title {
-  font-size: 22px;
+  font-size: clamp(16px, 1.6vw, 24px);
   font-weight: 900;
   color: var(--text);
   line-height: 1.15;
   white-space: nowrap;
 }
 .hdr-subtitle {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: clamp(14px, 1.4vw, 20px);
+  font-weight: 700;
   color: var(--text-muted);
   margin-top: 2px;
+  white-space: nowrap;
 }
 .hdr-meta {
-  font-size: 10px;
+  font-size: clamp(10px, 0.85vw, 13px);
   color: var(--text-muted);
   margin-top: 4px;
 }
@@ -67,7 +68,7 @@ header {
   align-items: center;
   gap: 5px;
   margin-top: 5px;
-  font-size: 10px;
+  font-size: clamp(10px, 0.85vw, 13px);
   color: var(--text-muted);
 }
 
