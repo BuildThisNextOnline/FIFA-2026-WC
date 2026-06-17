@@ -584,19 +584,6 @@ function buildPredictedDraw(allMatches, params) {
     return null;
   }
 
-  // For conditional win probability given you've already reached this round:
-  //   P(advance | in round) = next_prob / curr_prob
-  // This is the correct head-to-head comparison from sim data.
-  const CURR_SIM_ROUND = { R32: "r32", R16: "r16", QF: "qf",  SF: "sf",    Final: "final"    };
-  const NEXT_SIM_ROUND = { R32: "r16", R16: "qf",  QF: "sf",  SF: "final", Final: "champion" };
-  function simWinProb(teamName, round) {
-    const t = _simResult?.teams[teamName];
-    if (!t) return null;
-    const curr = t[CURR_SIM_ROUND[round]] || 0;
-    if (curr === 0) return 0;
-    return (t[NEXT_SIM_ROUND[round]] ?? 0) / curr;
-  }
-
   // Keep m.home/m.away as original placeholders (needed by resolveW in renderBracketDraw).
   // Store resolved display names in m._home/_away instead.
   for (const round of ["R32","R16","QF","SF","Final"]) {
@@ -611,20 +598,13 @@ function buildPredictedDraw(allMatches, params) {
         const winner = m.score.pen_winner || (hs > as ? (teamA || m.home) : (teamB || m.away));
         winners[m.id] = winner;
       } else if (teamA && teamB) {
-        // Prefer simulation probabilities to stay consistent with Stage Probabilities tab.
-        // Fall back to Poisson odds when sim hasn't run yet.
-        const simA = simWinProb(teamA, round);
-        const simB = simWinProb(teamB, round);
-        let winner;
-        if (simA !== null && simB !== null) {
-          winner = simA >= simB ? teamA : teamB;
-        } else {
-          const pred = predictMatch({ ...m, home: teamA, away: teamB }, params);
-          winner = pred ? (pred.odds.home >= pred.odds.away ? teamA : teamB) : teamA;
+        const pred = predictMatch({ ...m, home: teamA, away: teamB }, params);
+        if (pred) {
+          m.score = { ft_home: pred.best.homeGoals, ft_away: pred.best.awayGoals, et_home: null, et_away: null, pen_winner: null };
+          m._predicted = true;
+          m._winner = pred.odds.home >= pred.odds.away ? teamA : teamB;
+          winners[m.id] = m._winner;
         }
-        m._predicted = true;
-        m._winner = winner;
-        winners[m.id] = winner;
       }
     }
   }
