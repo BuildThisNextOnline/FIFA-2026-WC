@@ -105,7 +105,7 @@
   <div id="tab-draw" style="display:none">
     <div id="draw-note" style="font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.8;text-align:center">
       <div><strong style="color:var(--text)">Tournament Draw</strong> shows the single most-likely bracket path: actual results lock in completed matches, then the model picks one winner per remaining match using head-to-head Poisson probabilities.</div>
-      <div><strong style="color:var(--text)">Stage Probabilities</strong> aggregates 10,000 simulated tournaments where group outcomes also vary, so a team can have a high QF% overall yet lose in this specific bracket draw — both are correct, they answer different questions.</div>
+      <div><strong style="color:var(--text)">Stage Probabilities</strong> aggregates <span id="drawNoteN">10,000</span> simulated tournaments where group outcomes also vary, so a team can have a high QF% overall yet lose in this specific bracket draw — both are correct, they answer different questions.</div>
     </div>
     <div id="bracketDraw"><div class="loading-msg">Loading bracket…</div></div>
   </div>
@@ -623,6 +623,8 @@ function renderBracketDraw(allMatches, params) {
     : allMatches;
   const el = document.getElementById("bracketDraw");
   if (!el) return;
+  const noteN = document.getElementById("drawNoteN");
+  if (noteN && _simResult?.N) noteN.textContent = _simResult.N.toLocaleString();
 
   // Match lookup by id ("m73" etc.)
   const matchById = {};
