@@ -112,8 +112,8 @@ header {
   gap: 6px;
   min-width: 80px;
 }
-.hdr-rerun-col .btn { font-size: 10px; padding: 4px 10px; white-space: nowrap; }
-.hdr-rerun-col #simStatus { font-size: 9px; color: var(--text-muted); white-space: nowrap; }
+.hdr-rerun-col .btn { font-size: 12px; padding: 6px 14px; white-space: nowrap; }
+.hdr-rerun-col #simStatus { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
 
 /* 5 parameters panel */
 .hdr-params {
