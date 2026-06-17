@@ -92,6 +92,36 @@ This is where the tracker is most useful — not at the very start when everythi
 
 ---
 
+## This is also a twelve-year story
+
+In 2014, I was at Dell as part of their Global Analytics team. We were trying to encourage teams across the organisation to actually use predictive analytics in their work — not just know it existed, but reach for it when solving real problems.
+
+The honest assessment at the time: it wasn't taking off the way we hoped.
+
+So I proposed an experiment. Instead of pushing it through work projects, why not make it fun? Run an internal prediction competition around the FIFA World Cup 2014. Get people excited about a problem they already cared about, and let predictive analytics be the vehicle.
+
+It worked. The competition ran. People engaged. It became a small catalyst for applied analytics within the Dell Global Analytics org — which was exactly the point.
+
+But here's what that effort actually involved: teams pulling data manually from wherever they could find it. Models that took significant time and technical skill to build. Results that were hard to explain to anyone who hadn't built them. A process that required real expertise, real effort, and a lot of trial and error — just to get something rough and functional.
+
+That was 2014. One World Cup ago, in technology terms.
+
+---
+
+Cut to 2026.
+
+One person. One Claude subscription. A day or two of directed effort.
+
+The result: a live configurable prediction engine that uses peer-reviewed statistical models, pulls live match data automatically, runs tens of thousands of simulated tournaments in the background, and sits online — updating itself — without any ongoing intervention.
+
+No team. No server. No data engineering. No specialist required.
+
+The gap between those two things — 2014 and 2026 — is twelve years. Well within most of our living memories. And it is one of the clearest illustrations I've seen of how completely the tooling around data and AI has shifted. What required a team and weeks in 2014 is now an afternoon for one person with the right AI.
+
+That's not a comment about effort or intelligence. The Dell teams who ran those 2014 models were talented people doing serious work. It's a comment about leverage — about how much the tools themselves have changed what's possible, and how quickly.
+
+---
+
 ## Try it
 
 **Live at:** [buildthisnextonline.github.io/FIFA-2026-WC](https://buildthisnextonline.github.io/FIFA-2026-WC)
