@@ -220,8 +220,10 @@ function runMonteCarlo(allMatches, params = {}, N = 10000) {
       if (hint)   hint.textContent   = done;
       if (status) status.textContent = done;
       try {
-        renderStandings(getAllMatches());
+        const all = getAllMatches();
+        renderStandings(all);
         renderBracket();
+        renderBracketDraw(all, getSliderParams());
       } catch { /* data not ready */ }
     } else if (data.type === "error") {
       console.warn("Simulation error:", data.message);
