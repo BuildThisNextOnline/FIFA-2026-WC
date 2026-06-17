@@ -236,5 +236,33 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "I_49",
+    "group": "I",
+    "home": "Iraq",
+    "away": "Norway",
+    "date": "2026-06-16",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 4,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
+    "id": "J_54",
+    "group": "J",
+    "home": "Argentina",
+    "away": "Algeria",
+    "date": "2026-06-16",
+    "score": {
+      "ft_home": 3,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
