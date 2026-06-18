@@ -334,5 +334,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "A_2",
+    "group": "A",
+    "home": "Czech Republic",
+    "away": "South Africa",
+    "date": "2026-06-18",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
