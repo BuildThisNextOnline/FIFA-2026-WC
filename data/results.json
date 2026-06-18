@@ -294,6 +294,20 @@
     }
   },
   {
+    "id": "K_61",
+    "group": "K",
+    "home": "Uzbekistan",
+    "away": "Colombia",
+    "date": "2026-06-17",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 3,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "L_66",
     "group": "L",
     "home": "England",
