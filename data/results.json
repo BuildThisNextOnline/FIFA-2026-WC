@@ -350,6 +350,20 @@
     }
   },
   {
+    "id": "A_3",
+    "group": "A",
+    "home": "Mexico",
+    "away": "South Korea",
+    "date": "2026-06-18",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "B_8",
     "group": "B",
     "home": "Switzerland",
@@ -358,6 +372,20 @@
     "score": {
       "ft_home": 4,
       "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
+    "id": "B_9",
+    "group": "B",
+    "home": "Canada",
+    "away": "Qatar",
+    "date": "2026-06-18",
+    "score": {
+      "ft_home": 6,
+      "ft_away": 0,
       "et_home": null,
       "et_away": null,
       "pen_winner": null
