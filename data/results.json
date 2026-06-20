@@ -432,5 +432,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "D_21",
+    "group": "D",
+    "home": "Turkey",
+    "away": "Paraguay",
+    "date": "2026-06-19",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
