@@ -448,6 +448,20 @@
     }
   },
   {
+    "id": "E_26",
+    "group": "E",
+    "home": "Germany",
+    "away": "Ivory Coast",
+    "date": "2026-06-20",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "F_32",
     "group": "F",
     "home": "Netherlands",
