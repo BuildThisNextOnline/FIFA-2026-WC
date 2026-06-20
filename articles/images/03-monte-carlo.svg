@@ -81,20 +81,20 @@
   <text x="90" y="285" text-anchor="start" font-size="10" fill="#94a3b8">France  Champion:</text>
   <rect x="210" y="274" width="130" height="14" rx="3" fill="#1f2937"/>
   <rect x="210" y="274" width="49" height="14" rx="3" fill="#3b5bdb"/>
-  <text x="344" y="285" text-anchor="start" font-size="10" fill="#e2e8f0">38%</text>
+  <text x="263" y="285" text-anchor="start" font-size="10" fill="#e2e8f0">38%</text>
 
   <text x="90" y="313" text-anchor="start" font-size="10" fill="#94a3b8">England  QF:</text>
   <rect x="210" y="301" width="130" height="14" rx="3" fill="#1f2937"/>
   <rect x="210" y="301" width="32" height="14" rx="3" fill="#7c3aed"/>
-  <text x="344" y="313" text-anchor="start" font-size="10" fill="#e2e8f0">25%</text>
+  <text x="246" y="313" text-anchor="start" font-size="10" fill="#e2e8f0">25%</text>
 
   <text x="400" y="285" text-anchor="start" font-size="10" fill="#94a3b8">Brazil  Champion:</text>
   <rect x="510" y="274" width="130" height="14" rx="3" fill="#1f2937"/>
   <rect x="510" y="274" width="29" height="14" rx="3" fill="#3b5bdb"/>
-  <text x="644" y="285" text-anchor="start" font-size="10" fill="#e2e8f0">22%</text>
+  <text x="543" y="285" text-anchor="start" font-size="10" fill="#e2e8f0">22%</text>
 
   <text x="400" y="313" text-anchor="start" font-size="10" fill="#94a3b8">USA  Final:</text>
   <rect x="510" y="301" width="130" height="14" rx="3" fill="#1f2937"/>
   <rect x="510" y="301" width="18" height="14" rx="3" fill="#7c3aed"/>
-  <text x="644" y="313" text-anchor="start" font-size="10" fill="#e2e8f0">14%</text>
+  <text x="532" y="313" text-anchor="start" font-size="10" fill="#e2e8f0">14%</text>
 </svg>
