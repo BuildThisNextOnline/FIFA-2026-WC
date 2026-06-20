@@ -1,0 +1,100 @@
+<svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+  <title>Monte Carlo Simulation: How One Run Works</title>
+  <desc>Each simulation run flows through five stages: group stage, group rankings, third-place, knockout rounds, then accumulate results.</desc>
+
+  <rect width="720" height="360" fill="#0f1117"/>
+
+  <text x="360" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="#e8eaf0">Monte Carlo Simulation: How One Run Works</text>
+  <text x="360" y="46" text-anchor="middle" font-size="11" fill="#64748b">Repeated N times (default 10,000) in a background Web Worker</text>
+
+  <!-- Step 1: Group Stage -->
+  <rect x="20" y="68" width="126" height="100" rx="7" fill="#1a1f2e" stroke="#0891b2" stroke-width="2"/>
+  <rect x="20" y="68" width="126" height="28" rx="7" fill="#0e7490"/>
+  <rect x="20" y="84" width="126" height="12" fill="#0e7490"/>
+  <text x="83" y="86" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">① GROUP STAGE</text>
+  <text x="83" y="107" text-anchor="middle" font-size="9.5" fill="#7dd3fc">Sample goals from</text>
+  <text x="83" y="121" text-anchor="middle" font-size="9.5" fill="#7dd3fc">Poisson(λ) for</text>
+  <text x="83" y="135" text-anchor="middle" font-size="9.5" fill="#7dd3fc">each remaining match</text>
+  <text x="83" y="155" text-anchor="middle" font-size="9" fill="#475569">192 group matches</text>
+
+  <line x1="148" y1="118" x2="160" y2="118" stroke="#334155" stroke-width="1.5"/>
+  <polygon points="158,113 167,118 158,123" fill="#334155"/>
+
+  <!-- Step 2: Rankings -->
+  <rect x="168" y="68" width="126" height="100" rx="7" fill="#1a1f2e" stroke="#7c3aed" stroke-width="2"/>
+  <rect x="168" y="68" width="126" height="28" rx="7" fill="#6d28d9"/>
+  <rect x="168" y="84" width="126" height="12" fill="#6d28d9"/>
+  <text x="231" y="86" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">② RANKINGS</text>
+  <text x="231" y="107" text-anchor="middle" font-size="9.5" fill="#c4b5fd">Points → GD → GF</text>
+  <text x="231" y="121" text-anchor="middle" font-size="9.5" fill="#c4b5fd">→ H2H → lots</text>
+  <text x="231" y="135" text-anchor="middle" font-size="9.5" fill="#c4b5fd">Full FIFA cascade</text>
+  <text x="231" y="155" text-anchor="middle" font-size="9" fill="#475569">12 groups ranked</text>
+
+  <line x1="296" y1="118" x2="308" y2="118" stroke="#334155" stroke-width="1.5"/>
+  <polygon points="306,113 315,118 306,123" fill="#334155"/>
+
+  <!-- Step 3: Third Place -->
+  <rect x="316" y="68" width="126" height="100" rx="7" fill="#1a1f2e" stroke="#d97706" stroke-width="2"/>
+  <rect x="316" y="68" width="126" height="28" rx="7" fill="#b45309"/>
+  <rect x="316" y="84" width="126" height="12" fill="#b45309"/>
+  <text x="379" y="86" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">③ THIRD PLACE</text>
+  <text x="379" y="107" text-anchor="middle" font-size="9.5" fill="#fcd34d">Rank 12 third-place</text>
+  <text x="379" y="121" text-anchor="middle" font-size="9.5" fill="#fcd34d">finishers cross-group</text>
+  <text x="379" y="135" text-anchor="middle" font-size="9.5" fill="#fcd34d">Best 8 slot into R32</text>
+  <text x="379" y="155" text-anchor="middle" font-size="9" fill="#475569">FIFA slot rules</text>
+
+  <line x1="444" y1="118" x2="456" y2="118" stroke="#334155" stroke-width="1.5"/>
+  <polygon points="454,113 463,118 454,123" fill="#334155"/>
+
+  <!-- Step 4: Knockouts -->
+  <rect x="464" y="68" width="126" height="100" rx="7" fill="#1a1f2e" stroke="#dc2626" stroke-width="2"/>
+  <rect x="464" y="68" width="126" height="28" rx="7" fill="#b91c1c"/>
+  <rect x="464" y="84" width="126" height="12" fill="#b91c1c"/>
+  <text x="527" y="86" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">④ KNOCKOUTS</text>
+  <text x="527" y="107" text-anchor="middle" font-size="9.5" fill="#fca5a5">R32 → R16 → QF</text>
+  <text x="527" y="121" text-anchor="middle" font-size="9.5" fill="#fca5a5">→ SF → Final</text>
+  <text x="527" y="135" text-anchor="middle" font-size="9.5" fill="#fca5a5">Draws: 50/50 coin flip</text>
+  <text x="527" y="155" text-anchor="middle" font-size="9" fill="#475569">39 knockout matches</text>
+
+  <line x1="592" y1="118" x2="604" y2="118" stroke="#334155" stroke-width="1.5"/>
+  <polygon points="602,113 611,118 602,123" fill="#334155"/>
+
+  <!-- Step 5: Tally -->
+  <rect x="612" y="68" width="92" height="100" rx="7" fill="#1a1f2e" stroke="#16a34a" stroke-width="2"/>
+  <rect x="612" y="68" width="92" height="28" rx="7" fill="#15803d"/>
+  <rect x="612" y="84" width="92" height="12" fill="#15803d"/>
+  <text x="658" y="86" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">⑤ TALLY</text>
+  <text x="658" y="107" text-anchor="middle" font-size="9.5" fill="#86efac">Did each team</text>
+  <text x="658" y="121" text-anchor="middle" font-size="9.5" fill="#86efac">reach each round?</text>
+  <text x="658" y="135" text-anchor="middle" font-size="9.5" fill="#86efac">+1 counter if yes</text>
+  <text x="658" y="155" text-anchor="middle" font-size="9" fill="#475569">48 teams × 6 rounds</text>
+
+  <!-- Repeat arrow -->
+  <path d="M 658 170 Q 658 200 360 200 Q 62 200 83 170" stroke="#1e3a4a" stroke-width="1.5" fill="none" stroke-dasharray="5,4"/>
+  <polygon points="83,172 78,164 88,164" fill="#1e3a4a"/>
+  <text x="360" y="218" text-anchor="middle" font-size="10" fill="#334155">Repeat until N runs complete</text>
+
+  <!-- Output section -->
+  <rect x="60" y="238" width="600" height="100" rx="8" fill="#111827" stroke="#1f2937" stroke-width="1.5"/>
+  <text x="360" y="260" text-anchor="middle" font-size="12" font-weight="600" fill="#e2e8f0">Final output: count ÷ N = probability</text>
+
+  <text x="90" y="285" text-anchor="start" font-size="10" fill="#94a3b8">France  Champion:</text>
+  <rect x="200" y="274" width="200" height="14" rx="3" fill="#1f2937"/>
+  <rect x="200" y="274" width="76" height="14" rx="3" fill="#3b5bdb"/>
+  <text x="284" y="285" text-anchor="start" font-size="10" fill="#e2e8f0">38%</text>
+
+  <text x="90" y="313" text-anchor="start" font-size="10" fill="#94a3b8">England  QF%:</text>
+  <rect x="200" y="301" width="200" height="14" rx="3" fill="#1f2937"/>
+  <rect x="200" y="301" width="50" height="14" rx="3" fill="#7c3aed"/>
+  <text x="254" y="313" text-anchor="start" font-size="10" fill="#e2e8f0">25%</text>
+
+  <text x="430" y="285" text-anchor="start" font-size="10" fill="#94a3b8">Brazil  Champion:</text>
+  <rect x="540" y="274" width="140" height="14" rx="3" fill="#1f2937"/>
+  <rect x="540" y="274" width="43" height="14" rx="3" fill="#3b5bdb"/>
+  <text x="587" y="285" text-anchor="start" font-size="10" fill="#e2e8f0">22%</text>
+
+  <text x="430" y="313" text-anchor="start" font-size="10" fill="#94a3b8">USA  Final%:</text>
+  <rect x="540" y="301" width="140" height="14" rx="3" fill="#1f2937"/>
+  <rect x="540" y="301" width="28" height="14" rx="3" fill="#7c3aed"/>
+  <text x="572" y="313" text-anchor="start" font-size="10" fill="#e2e8f0">14%</text>
+</svg>

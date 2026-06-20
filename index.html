@@ -33,15 +33,15 @@
       <div class="hdr-param">
         <div class="hparam-name">Home advantage</div>
         <div class="hparam-desc">Mexico, USA &amp; Canada score more at home.</div>
-        <div class="hparam-default">Default: +20%</div>
-        <input type="range" class="slider-input" data-param="gamma" min="0" max="0.60" step="0.20" value="0.20">
+        <div class="hparam-default" data-default="gamma" data-default-label="+20%">Default: +20% | Selected: +20%</div>
+        <input type="range" class="slider-input" data-param="gamma" min="0" max="0.60" step="0.05" value="0.20">
         <div class="hparam-ticks" data-param="gamma"></div>
       </div>
 
       <div class="hdr-param">
         <div class="hparam-name">Draw correction</div>
         <div class="hparam-desc">~1 in 4 group games ends in a draw. Adjusts model draw rate.</div>
-        <div class="hparam-default">Default: −10%</div>
+        <div class="hparam-default" data-default="tau" data-default-label="−10%">Default: −10% | Selected: −10%</div>
         <input type="range" class="slider-input" data-param="tau" min="-0.30" max="0" step="0.10" value="-0.10">
         <div class="hparam-ticks" data-param="tau"></div>
       </div>
@@ -49,7 +49,7 @@
       <div class="hdr-param">
         <div class="hparam-name">Rest advantage</div>
         <div class="hparam-desc">Extra rest boosts scoring. 5+ days gap = more goals for the fresher team.</div>
-        <div class="hparam-default">Default: +5%</div>
+        <div class="hparam-default" data-default="delta" data-default-label="+5%">Default: +5% | Selected: +5%</div>
         <input type="range" class="slider-input" data-param="delta" min="0" max="0.15" step="0.05" value="0.05">
         <div class="hparam-ticks" data-param="delta"></div>
       </div>
@@ -57,7 +57,7 @@
       <div class="hdr-param">
         <div class="hparam-name">ET fatigue</div>
         <div class="hparam-desc">After a 120-min match, a team's goal output drops in their next game.</div>
-        <div class="hparam-default">Default: −10%</div>
+        <div class="hparam-default" data-default="etPenalty" data-default-label="−10%">Default: −10% | Selected: −10%</div>
         <input type="range" class="slider-input" data-param="etPenalty" min="0" max="0.30" step="0.10" value="0.10">
         <div class="hparam-ticks" data-param="etPenalty"></div>
       </div>
@@ -65,7 +65,7 @@
       <div class="hdr-param">
         <div class="hparam-name">Simulations</div>
         <div class="hparam-desc">More runs = more precise knockout %. 50k is most accurate.</div>
-        <div class="hparam-default">Default: 10k</div>
+        <div class="hparam-default" data-default="N" data-default-label="10k">Default: 10k | Selected: 10k</div>
         <input type="range" class="slider-input" data-param="N" min="0" max="3" step="1" value="1">
         <div class="hparam-ticks" data-param="N"></div>
       </div>
@@ -954,11 +954,30 @@ document.querySelectorAll(".hparam-ticks[data-param]").forEach(el => {
   }).join("");
 });
 
-// Mark Apply button as needing a click when any slider moves
+// Mark Apply button as needing a click when any slider moves; update live value label
+const N_LABELS = ["1k","10k","25k","50k"];
+function formatSelectedVal(param, v) {
+  if (param === "N")          return N_LABELS[parseInt(v)] ?? "10k";
+  if (param === "gamma")      return "+" + Math.round(v * 100) + "%";
+  if (param === "tau")        return "−" + Math.round(Math.abs(v) * 100) + "%";
+  if (param === "delta")      return "+" + Math.round(v * 100) + "%";
+  if (param === "etPenalty")  return "−" + Math.round(v * 100) + "%";
+  return Math.round(v * 100) + "%";
+}
 document.querySelectorAll(".slider-input").forEach(input => {
+  const param = input.dataset.param;
+  const updateLabel = () => {
+    const label = document.querySelector(`.hparam-default[data-default="${param}"]`);
+    if (!label) return;
+    const def = label.dataset.defaultLabel;
+    const sel = formatSelectedVal(param, parseFloat(input.value));
+    label.textContent = `Default: ${def} | Selected: ${sel}`;
+  };
+  updateLabel();
   input.addEventListener("input", () => {
     const btn = document.getElementById("rerunBtn");
     if (btn) { btn.disabled = false; }
+    updateLabel();
   });
 });
 

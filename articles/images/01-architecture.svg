@@ -1,0 +1,74 @@
+<svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+  <title>Architecture: Three Separated Concerns</title>
+  <desc>Three boxes — Model, Simulator, Interface — connected by arrows showing clean handoffs between them.</desc>
+
+  <rect width="720" height="320" fill="#0f1117"/>
+
+  <!-- Title -->
+  <text x="360" y="32" text-anchor="middle" font-size="15" font-weight="700" fill="#e8eaf0">Architecture: Three Separated Concerns</text>
+
+  <!-- Box 1: Model -->
+  <rect x="40" y="60" width="180" height="200" rx="8" fill="#1a1f2e" stroke="#3b5bdb" stroke-width="2"/>
+  <rect x="40" y="60" width="180" height="36" rx="8" fill="#3b5bdb"/>
+  <rect x="40" y="84" width="180" height="12" fill="#3b5bdb"/>
+  <text x="130" y="83" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">MODEL</text>
+
+  <text x="130" y="120" text-anchor="middle" font-size="11" fill="#94a3b8">Poisson + Dixon-Coles</text>
+  <text x="130" y="138" text-anchor="middle" font-size="11" fill="#94a3b8">scoreline matrix</text>
+
+  <line x1="60" y1="158" x2="200" y2="158" stroke="#2d3748" stroke-width="1"/>
+
+  <text x="130" y="178" text-anchor="middle" font-size="10" fill="#64748b">Input:</text>
+  <text x="130" y="194" text-anchor="middle" font-size="10" fill="#cbd5e1">Two teams + params</text>
+  <text x="130" y="216" text-anchor="middle" font-size="10" fill="#64748b">Output:</text>
+  <text x="130" y="232" text-anchor="middle" font-size="10" fill="#cbd5e1">W/D/L odds + score</text>
+  <text x="130" y="248" text-anchor="middle" font-size="10" fill="#4ade80">Runs instantly</text>
+
+  <!-- Arrow 1 to 2 -->
+  <line x1="222" y1="160" x2="258" y2="160" stroke="#475569" stroke-width="2"/>
+  <polygon points="258,155 268,160 258,165" fill="#475569"/>
+  <text x="245" y="150" text-anchor="middle" font-size="9" fill="#64748b">odds</text>
+
+  <!-- Box 2: Simulator -->
+  <rect x="270" y="60" width="180" height="200" rx="8" fill="#1a1f2e" stroke="#7c3aed" stroke-width="2"/>
+  <rect x="270" y="60" width="180" height="36" rx="8" fill="#7c3aed"/>
+  <rect x="270" y="84" width="180" height="12" fill="#7c3aed"/>
+  <text x="360" y="83" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">SIMULATOR</text>
+
+  <text x="360" y="120" text-anchor="middle" font-size="11" fill="#94a3b8">Monte Carlo</text>
+  <text x="360" y="138" text-anchor="middle" font-size="11" fill="#94a3b8">Web Worker</text>
+
+  <line x1="290" y1="158" x2="430" y2="158" stroke="#2d3748" stroke-width="1"/>
+
+  <text x="360" y="178" text-anchor="middle" font-size="10" fill="#64748b">Input:</text>
+  <text x="360" y="194" text-anchor="middle" font-size="10" fill="#cbd5e1">All matches + N runs</text>
+  <text x="360" y="216" text-anchor="middle" font-size="10" fill="#64748b">Output:</text>
+  <text x="360" y="232" text-anchor="middle" font-size="10" fill="#cbd5e1">Per-team stage %</text>
+  <text x="360" y="248" text-anchor="middle" font-size="10" fill="#4ade80">Runs in background</text>
+
+  <!-- Arrow 2 to 3 -->
+  <line x1="452" y1="160" x2="488" y2="160" stroke="#475569" stroke-width="2"/>
+  <polygon points="488,155 498,160 488,165" fill="#475569"/>
+  <text x="470" y="150" text-anchor="middle" font-size="9" fill="#64748b">probs</text>
+
+  <!-- Box 3: Interface -->
+  <rect x="500" y="60" width="180" height="200" rx="8" fill="#1a1f2e" stroke="#0891b2" stroke-width="2"/>
+  <rect x="500" y="60" width="180" height="36" rx="8" fill="#0891b2"/>
+  <rect x="500" y="84" width="180" height="12" fill="#0891b2"/>
+  <text x="590" y="83" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">INTERFACE</text>
+
+  <text x="590" y="120" text-anchor="middle" font-size="11" fill="#94a3b8">Single HTML file</text>
+  <text x="590" y="138" text-anchor="middle" font-size="11" fill="#94a3b8">No server · No build</text>
+
+  <line x1="520" y1="158" x2="660" y2="158" stroke="#2d3748" stroke-width="1"/>
+
+  <text x="590" y="178" text-anchor="middle" font-size="10" fill="#64748b">4 tabs · 5 sliders</text>
+  <text x="590" y="196" text-anchor="middle" font-size="10" fill="#cbd5e1">Live data feed</text>
+  <text x="590" y="214" text-anchor="middle" font-size="10" fill="#cbd5e1">Fixtures · Standings</text>
+  <text x="590" y="232" text-anchor="middle" font-size="10" fill="#cbd5e1">Stage Probs · Draw</text>
+  <text x="590" y="250" text-anchor="middle" font-size="10" fill="#4ade80">Stays responsive</text>
+
+  <!-- Key insight at bottom -->
+  <rect x="40" y="274" width="640" height="30" rx="6" fill="#1e2433" stroke="#334155" stroke-width="1"/>
+  <text x="360" y="294" text-anchor="middle" font-size="11" fill="#94a3b8">A change to the model doesn't touch the simulator. A change to the interface doesn't require re-running anything.</text>
+</svg>
