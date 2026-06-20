@@ -54,7 +54,7 @@
   <text x="527" y="107" text-anchor="middle" font-size="9.5" fill="#fca5a5">R32 → R16 → QF</text>
   <text x="527" y="121" text-anchor="middle" font-size="9.5" fill="#fca5a5">→ SF → Final</text>
   <text x="527" y="135" text-anchor="middle" font-size="9.5" fill="#fca5a5">Draws: 50/50 coin flip</text>
-  <text x="527" y="155" text-anchor="middle" font-size="9" fill="#475569">39 knockout matches</text>
+  <text x="527" y="155" text-anchor="middle" font-size="9" fill="#475569">32 knockout matches</text>
 
   <line x1="592" y1="118" x2="604" y2="118" stroke="#334155" stroke-width="1.5"/>
   <polygon points="602,113 611,118 602,123" fill="#334155"/>
@@ -79,22 +79,22 @@
   <text x="360" y="260" text-anchor="middle" font-size="12" font-weight="600" fill="#e2e8f0">Final output: count ÷ N = probability</text>
 
   <text x="90" y="285" text-anchor="start" font-size="10" fill="#94a3b8">France  Champion:</text>
-  <rect x="200" y="274" width="200" height="14" rx="3" fill="#1f2937"/>
-  <rect x="200" y="274" width="76" height="14" rx="3" fill="#3b5bdb"/>
-  <text x="284" y="285" text-anchor="start" font-size="10" fill="#e2e8f0">38%</text>
+  <rect x="210" y="274" width="130" height="14" rx="3" fill="#1f2937"/>
+  <rect x="210" y="274" width="49" height="14" rx="3" fill="#3b5bdb"/>
+  <text x="344" y="285" text-anchor="start" font-size="10" fill="#e2e8f0">38%</text>
 
-  <text x="90" y="313" text-anchor="start" font-size="10" fill="#94a3b8">England  QF%:</text>
-  <rect x="200" y="301" width="200" height="14" rx="3" fill="#1f2937"/>
-  <rect x="200" y="301" width="50" height="14" rx="3" fill="#7c3aed"/>
-  <text x="254" y="313" text-anchor="start" font-size="10" fill="#e2e8f0">25%</text>
+  <text x="90" y="313" text-anchor="start" font-size="10" fill="#94a3b8">England  QF:</text>
+  <rect x="210" y="301" width="130" height="14" rx="3" fill="#1f2937"/>
+  <rect x="210" y="301" width="32" height="14" rx="3" fill="#7c3aed"/>
+  <text x="344" y="313" text-anchor="start" font-size="10" fill="#e2e8f0">25%</text>
 
-  <text x="430" y="285" text-anchor="start" font-size="10" fill="#94a3b8">Brazil  Champion:</text>
-  <rect x="540" y="274" width="100" height="14" rx="3" fill="#1f2937"/>
-  <rect x="540" y="274" width="34" height="14" rx="3" fill="#3b5bdb"/>
-  <text x="578" y="285" text-anchor="start" font-size="10" fill="#e2e8f0">22%</text>
+  <text x="400" y="285" text-anchor="start" font-size="10" fill="#94a3b8">Brazil  Champion:</text>
+  <rect x="510" y="274" width="130" height="14" rx="3" fill="#1f2937"/>
+  <rect x="510" y="274" width="29" height="14" rx="3" fill="#3b5bdb"/>
+  <text x="644" y="285" text-anchor="start" font-size="10" fill="#e2e8f0">22%</text>
 
-  <text x="430" y="313" text-anchor="start" font-size="10" fill="#94a3b8">USA  Final%:</text>
-  <rect x="540" y="301" width="100" height="14" rx="3" fill="#1f2937"/>
-  <rect x="540" y="301" width="22" height="14" rx="3" fill="#7c3aed"/>
-  <text x="566" y="313" text-anchor="start" font-size="10" fill="#e2e8f0">14%</text>
+  <text x="400" y="313" text-anchor="start" font-size="10" fill="#94a3b8">USA  Final:</text>
+  <rect x="510" y="301" width="130" height="14" rx="3" fill="#1f2937"/>
+  <rect x="510" y="301" width="18" height="14" rx="3" fill="#7c3aed"/>
+  <text x="644" y="313" text-anchor="start" font-size="10" fill="#e2e8f0">14%</text>
 </svg>
