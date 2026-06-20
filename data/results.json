@@ -446,5 +446,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "F_32",
+    "group": "F",
+    "home": "Netherlands",
+    "away": "Sweden",
+    "date": "2026-06-20",
+    "score": {
+      "ft_home": 5,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
