@@ -15,7 +15,7 @@
   <text x="83" y="107" text-anchor="middle" font-size="9.5" fill="#7dd3fc">Sample goals from</text>
   <text x="83" y="121" text-anchor="middle" font-size="9.5" fill="#7dd3fc">Poisson(λ) for</text>
   <text x="83" y="135" text-anchor="middle" font-size="9.5" fill="#7dd3fc">each remaining match</text>
-  <text x="83" y="155" text-anchor="middle" font-size="9" fill="#475569">192 group matches</text>
+  <text x="83" y="155" text-anchor="middle" font-size="9" fill="#475569">72 group matches</text>
 
   <line x1="148" y1="118" x2="160" y2="118" stroke="#334155" stroke-width="1.5"/>
   <polygon points="158,113 167,118 158,123" fill="#334155"/>
