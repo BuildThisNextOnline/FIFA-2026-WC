@@ -488,5 +488,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "F_33",
+    "group": "F",
+    "home": "Tunisia",
+    "away": "Japan",
+    "date": "2026-06-20",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 4,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
