@@ -462,6 +462,20 @@
     }
   },
   {
+    "id": "E_27",
+    "group": "E",
+    "home": "Ecuador",
+    "away": "Curaçao",
+    "date": "2026-06-20",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "F_32",
     "group": "F",
     "home": "Netherlands",
