@@ -502,5 +502,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "H_44",
+    "group": "H",
+    "home": "Spain",
+    "away": "Saudi Arabia",
+    "date": "2026-06-21",
+    "score": {
+      "ft_home": 4,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
