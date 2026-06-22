@@ -241,6 +241,10 @@ function simulateOne(
     const mL = placeholder.match(/^L(\d+)$/);
     if (mL) return matchLosers[`m${mL[1]}`] || null;
 
+    // Feed has replaced a group-position placeholder with an actual team name
+    // (e.g. "1A" → "Mexico" once Group A is decided). Return it directly.
+    if (!isPlaceholder(placeholder)) return placeholder;
+
     return null;
   }
 
