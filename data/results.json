@@ -558,5 +558,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "J_56",
+    "group": "J",
+    "home": "Argentina",
+    "away": "Austria",
+    "date": "2026-06-22",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
