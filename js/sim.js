@@ -121,19 +121,26 @@ export function getGroupTeams(allMatches) {
  * Build a map from feed match ID → THIRD_PLACE_SLOTS matchId (R32-02 etc.)
  * for the 8 R32 slots that host a third-place team.
  * Detection: R32 matches where one team placeholder starts with "3".
+ *
+ * Matches by eligible-group set extracted from the "3X/Y/Z" placeholder,
+ * because the feed sometimes replaces the opponent placeholder (e.g. "1E")
+ * with the actual team name once that group is decided.
  */
 function buildThirdSlotMap(knockoutMatches) {
-  const opponentToSlotId = {};
+  // Index THIRD_PLACE_SLOTS by sorted eligible-group key, e.g. "ABCDF"
+  const eligibleKeyToSlotId = {};
   for (const slot of THIRD_PLACE_SLOTS) {
-    opponentToSlotId[slot.opponent] = slot.matchId;
+    const key = [...slot.eligible].sort().join("");
+    eligibleKeyToSlotId[key] = slot.matchId;
   }
   const map = {};
   for (const m of knockoutMatches) {
     if (m.group !== "R32") continue;
-    const hasThird = (m.home && /^3/.test(m.home)) || (m.away && /^3/.test(m.away));
-    if (!hasThird) continue;
-    const opponent = /^3/.test(m.home) ? m.away : m.home;
-    const slotId = opponentToSlotId[opponent];
+    const thirdPlaceholder = /^3/.test(m.home) ? m.home : /^3/.test(m.away) ? m.away : null;
+    if (!thirdPlaceholder) continue;
+    // Extract group letters from placeholder like "3A/B/C/D/F" → "ABCDF"
+    const groups = thirdPlaceholder.replace(/^3/, "").split("/").filter(Boolean).sort().join("");
+    const slotId = eligibleKeyToSlotId[groups];
     if (slotId) map[m.id] = slotId;
   }
   return map;

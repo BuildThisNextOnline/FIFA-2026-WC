@@ -562,15 +562,19 @@ function buildPredictedDraw(allMatches, params) {
   const slotAssignment = slotThirdPlace(top8thirds) || {};  // { "R32-02": "A", ... }
 
   // Build feed-matchId → third-place team name
-  const opponentToSlot = {};
-  for (const slot of THIRD_PLACE_SLOTS) opponentToSlot[slot.opponent] = slot.matchId;
+  // Match by eligible-group key (not opponent name) because feed may replace
+  // "1E" with actual team name once that group is decided.
+  const eligibleKeyToSlotId = {};
+  for (const slot of THIRD_PLACE_SLOTS) {
+    eligibleKeyToSlotId[[...slot.eligible].sort().join("")] = slot.matchId;
+  }
   const thirdTeamByFeedId = {};
   for (const m of work) {
     if (m.group !== "R32") continue;
-    const hasThird = (m.home && /^3/.test(m.home)) || (m.away && /^3/.test(m.away));
-    if (!hasThird) continue;
-    const opponent = /^3/.test(m.home) ? m.away : m.home;
-    const slotId = opponentToSlot[opponent];
+    const thirdPlaceholder = /^3/.test(m.home) ? m.home : /^3/.test(m.away) ? m.away : null;
+    if (!thirdPlaceholder) continue;
+    const groups = thirdPlaceholder.replace(/^3/, "").split("/").filter(Boolean).sort().join("");
+    const slotId = eligibleKeyToSlotId[groups];
     if (slotId && slotAssignment[slotId]) {
       thirdTeamByFeedId[m.id] = rankings[slotAssignment[slotId]]?.[2]?.team || null;
     }
