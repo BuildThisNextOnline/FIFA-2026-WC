@@ -243,7 +243,7 @@ function simulateOne(
 
     // Feed has replaced a group-position placeholder with an actual team name
     // (e.g. "1A" → "Mexico" once Group A is decided). Return it directly.
-    if (!isPlaceholder(placeholder)) return placeholder;
+    if (!/^[0-9WL3]/.test(placeholder)) return placeholder;
 
     return null;
   }
