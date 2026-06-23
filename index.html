@@ -112,6 +112,7 @@
       <select id="focusTeamSelect" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">
         <option value="">— Model prediction —</option>
       </select>
+      <span id="fanHint" style="font-size:11px;color:var(--text-muted)"></span>
       <div id="overrideBanner" style="display:none;font-size:11px;color:#f59e0b;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:4px 10px;display:none;align-items:center;gap:6px">
         <span id="overrideCount">0</span> match(es) manually set · Stage Probabilities are unaffected ·
         <button id="clearOverrides" style="background:none;border:none;color:#f59e0b;cursor:pointer;font-size:11px;text-decoration:underline;padding:0">Clear all</button>
@@ -652,6 +653,10 @@ function renderBracketDraw(allMatches, params) {
   }
   if (sel && sel.value !== _focusTeam) sel.value = _focusTeam;
 
+  // Update hint text
+  const hint = document.getElementById("fanHint");
+  if (hint) hint.textContent = _focusTeam ? "· Click an orange slot in the bracket to lock/unlock that result" : "";
+
   // Update override banner
   const banner = document.getElementById("overrideBanner");
   const nOver  = Object.keys(_matchOverrides).length;
@@ -861,14 +866,22 @@ function renderBracketDraw(allMatches, params) {
     if (matchHasFocus && !played) {
       const overlayH = SH * 2 + TG;
       const tip = isOverridden
-        ? `Click to remove override (restore model prediction)`
+        ? `Click to restore model prediction`
         : `Click to make ${focusTeam} win this match`;
-      out += `<rect x="${x}" y="${y1}" width="${SW}" height="${overlayH}" fill="transparent"
-        style="cursor:pointer" rx="2"
+      // Dashed border makes the slot visually clickable; fill opacity ~0 but non-zero
+      // so pointer-events fire reliably across browsers.
+      out += `<rect x="${x}" y="${y1}" width="${SW}" height="${overlayH}"
+        fill="rgba(249,115,22,0.04)" stroke="${C.borderF}" stroke-width="1.5"
+        stroke-dasharray="${isOverridden ? 'none' : '4,3'}" rx="2"
+        pointer-events="all" style="cursor:pointer"
         data-mid="${m.id}" data-team="${focusTeam}"
         data-override="${isOverridden ? '1' : '0'}">
         <title>${tip}</title>
       </rect>`;
+      // Small lock label at top-right of the match
+      const lbl = isOverridden ? "🔒" : "🔓";
+      out += `<text x="${x+SW-3}" y="${y1+9}" text-anchor="end" font-size="8"
+        fill="${C.borderF}" pointer-events="none">${lbl}</text>`;
     }
 
     // Connecting lines — orange for the focus team's winning path
