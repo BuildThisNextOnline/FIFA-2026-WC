@@ -628,5 +628,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "L_68",
+    "group": "L",
+    "home": "England",
+    "away": "Ghana",
+    "date": "2026-06-23",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
