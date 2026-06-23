@@ -992,20 +992,24 @@ function renderBracketDraw(allMatches, params) {
       const wasSet = rect.getAttribute("data-override") === "1";
       if (wasSet) {
         delete _matchOverrides[mid];
-        // Cascade-clear any downstream locks that are now orphaned:
-        // rebuild the draw with remaining overrides and drop any lock where
-        // the focus team no longer appears in that match.
-        const all = getAllMatches();
-        const p   = getSliderParams();
-        const testDraw = buildPredictedDraw(all, p, _matchOverrides);
-        const byId = {};
-        testDraw.forEach(m => { if (m.id) byId[m.id] = m; });
-        for (const key of Object.keys(_matchOverrides)) {
-          const m = byId[key];
-          if (!m || (m._home !== team && m._away !== team)) {
-            delete _matchOverrides[key];
+        // Re-validate all remaining locks sequentially round by round.
+        // A lock at round N is only valid if the focus team actually appears
+        // in that match given only the locks from rounds R32..N-1.
+        // Building round-by-round ensures upstream unlocks cascade correctly.
+        const all  = getAllMatches();
+        const p    = getSliderParams();
+        const validated = {};
+        for (const round of ["R32","R16","QF","SF","Final"]) {
+          const draw = buildPredictedDraw(all, p, validated);
+          const matchInRound = draw.find(m =>
+            m.group === round && (m._home === team || m._away === team)
+          );
+          if (!matchInRound) break; // team eliminated here — no point checking further
+          if (_matchOverrides[matchInRound.id]) {
+            validated[matchInRound.id] = team; // lock survives only if team is in the match
           }
         }
+        _matchOverrides = validated;
       } else {
         _matchOverrides[mid] = team;
       }
