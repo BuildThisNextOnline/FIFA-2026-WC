@@ -930,13 +930,19 @@ function renderBracketDraw(allMatches, params) {
   const champY  = ROOT_MID_Y - CHAMP_H / 2;      // champion box y (centred on same mid)
 
   // Left finalist slot
-  svg += slot(FINAL_X, fySlot, leftFinalist, null,
-              !fp_pred && champTeam === leftFinalist, fp_pred);
+  const leftFocus  = focusTeam && leftFinalist  === focusTeam;
+  const rightFocus = focusTeam && rightFinalist === focusTeam;
+  const finalOverridable = !finalM.score || finalM._predicted;
+  const finalIsOverridden = !!finalM._overridden;
 
-  // Champion slot (gold or green)
+  svg += slot(FINAL_X, fySlot, leftFinalist, null,
+              !fp_pred && champTeam === leftFinalist, fp_pred, leftFocus);
+
+  // Champion slot (gold or green; orange tint if focus team is champion)
   {
-    const gold = fp_pred ? "#f59e0b" : "#22c55e";
-    const fill = fp_pred ? "rgba(245,158,11,0.18)" : "rgba(34,197,94,0.18)";
+    const focusIsChamp = focusTeam && champTeam === focusTeam;
+    const gold = focusIsChamp ? "#f97316" : (fp_pred ? "#f59e0b" : "#22c55e");
+    const fill = focusIsChamp ? "rgba(249,115,22,0.18)" : (fp_pred ? "rgba(245,158,11,0.18)" : "rgba(34,197,94,0.18)");
     if (champTeam) {
       svg += `<rect x="${CHAMP_X}" y="${champY}" width="${SW}" height="${CHAMP_H}" rx="5" fill="${fill}" stroke="${gold}" stroke-width="2"/>`;
       svg += `<text x="${CHAMP_X+SW/2}" y="${champY+14}" fill="${gold}" font-size="8" font-weight="700" text-anchor="middle">🏆 CHAMPION</text>`;
@@ -949,7 +955,23 @@ function renderBracketDraw(allMatches, params) {
 
   // Right finalist slot
   svg += slot(RIGHT_FINAL_X, fySlot, rightFinalist, null,
-              !fp_pred && champTeam === rightFinalist, fp_pred);
+              !fp_pred && champTeam === rightFinalist, fp_pred, rightFocus);
+
+  // Clickable overlay for the Final if focus team is a finalist
+  if ((leftFocus || rightFocus) && finalOverridable) {
+    const fx = leftFocus ? FINAL_X : RIGHT_FINAL_X;
+    const lbl = finalIsOverridden ? "locked" : "click";
+    svg += `<rect x="${fx}" y="${fySlot}" width="${SW}" height="${SH}"
+      fill="rgba(249,115,22,0.04)" stroke="${C.borderF}" stroke-width="1.5"
+      stroke-dasharray="${finalIsOverridden ? 'none' : '4,3'}" rx="2"
+      pointer-events="all" style="cursor:pointer"
+      data-mid="${finalM.id}" data-team="${focusTeam}"
+      data-override="${finalIsOverridden ? '1' : '0'}">
+      <title>${finalIsOverridden ? 'Click to restore model prediction' : `Click to make ${focusTeam} win the Final`}</title>
+    </rect>`;
+    svg += `<text x="${fx+SW-3}" y="${fySlot+9}" text-anchor="end" font-size="7.5"
+      fill="${C.borderF}" pointer-events="none" font-style="italic">${lbl}</text>`;
+  }
 
   // Connecting lines: SF→FINAL→CHAMPION→FINAL→SF (all horizontal at ROOT_MID_Y)
   if (leftRoot)
