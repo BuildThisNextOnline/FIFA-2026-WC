@@ -879,9 +879,9 @@ function renderBracketDraw(allMatches, params) {
         <title>${tip}</title>
       </rect>`;
       // Small lock label at top-right of the match
-      const lbl = isOverridden ? "🔒" : "🔓";
-      out += `<text x="${x+SW-3}" y="${y1+9}" text-anchor="end" font-size="8"
-        fill="${C.borderF}" pointer-events="none">${lbl}</text>`;
+      const lbl = isOverridden ? "locked" : "click";
+      out += `<text x="${x+SW-3}" y="${y1+9}" text-anchor="end" font-size="7.5"
+        fill="${C.borderF}" pointer-events="none" font-style="italic">${lbl}</text>`;
     }
 
     // Connecting lines — orange for the focus team's winning path
@@ -961,6 +961,18 @@ function renderBracketDraw(allMatches, params) {
 
   svg += "</svg>";
   el.innerHTML = svg;
+
+  // Attach click listeners directly to overlay rects (SVG event delegation is unreliable)
+  el.querySelectorAll("rect[data-mid]").forEach(rect => {
+    rect.addEventListener("click", () => {
+      const mid    = rect.getAttribute("data-mid");
+      const team   = rect.getAttribute("data-team");
+      const wasSet = rect.getAttribute("data-override") === "1";
+      if (wasSet) delete _matchOverrides[mid];
+      else _matchOverrides[mid] = team;
+      try { renderBracketDraw(getAllMatches(), getSliderParams()); } catch {}
+    });
+  });
 }
 
 // ── Fan mode controls ─────────────────────────────────────────────────────────
@@ -976,20 +988,6 @@ document.getElementById("clearOverrides")?.addEventListener("click", () => {
   try { renderBracketDraw(getAllMatches(), getSliderParams()); } catch {}
 });
 
-document.getElementById("bracketDraw")?.addEventListener("click", e => {
-  // Delegate clicks from transparent overlay rects
-  const target = e.target.closest("[data-mid]");
-  if (!target) return;
-  const mid      = target.dataset.mid;
-  const team     = target.dataset.team;
-  const wasSet   = target.dataset.override === "1";
-  if (wasSet) {
-    delete _matchOverrides[mid];
-  } else {
-    _matchOverrides[mid] = team;
-  }
-  try { renderBracketDraw(getAllMatches(), getSliderParams()); } catch {}
-});
 
 // ---- Bootstrap --------------------------------------------------------------
 
