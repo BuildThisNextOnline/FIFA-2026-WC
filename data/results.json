@@ -614,5 +614,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "K_62",
+    "group": "K",
+    "home": "Portugal",
+    "away": "Uzbekistan",
+    "date": "2026-06-23",
+    "score": {
+      "ft_home": 5,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
