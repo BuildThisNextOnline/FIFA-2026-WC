@@ -109,7 +109,7 @@
     </div>
     <div id="fan-controls" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
       <label style="font-size:12px;color:var(--text-muted);white-space:nowrap">Root for:</label>
-      <select id="focusTeamSelect" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">
+      <select id="focusTeamSelect" style="background:#1e2433;color:#e2e8f0;border:1px solid #2d3748;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">
         <option value="">— Model prediction —</option>
       </select>
       <span id="fanHint" style="font-size:11px;color:var(--text-muted)"></span>
@@ -862,8 +862,8 @@ function renderBracketDraw(allMatches, params) {
       out += `<text x="${x+SW-3}" y="${y1-2}" text-anchor="end" fill="#f59e0b" font-size="8" title="Manually overridden">✎</text>`;
     }
 
-    // Clickable overlay: if focus team is in this unplayed match, allow clicking to toggle override
-    if (matchHasFocus && !played) {
+    // Clickable overlay: allow override on predicted matches (not on real results)
+    if (matchHasFocus && (!m.score || m._predicted)) {
       const overlayH = SH * 2 + TG;
       const tip = isOverridden
         ? `Click to restore model prediction`
