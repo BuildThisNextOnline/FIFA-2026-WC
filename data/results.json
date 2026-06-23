@@ -600,5 +600,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "J_57",
+    "group": "J",
+    "home": "Jordan",
+    "away": "Algeria",
+    "date": "2026-06-22",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 2,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
