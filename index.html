@@ -107,6 +107,16 @@
       <div><strong style="color:var(--text)">Tournament Draw</strong> shows the single most-likely bracket path: actual results lock in completed matches, then the model picks one winner per remaining match using head-to-head Poisson probabilities.</div>
       <div><strong style="color:var(--text)">Stage Probabilities</strong> aggregates <span id="drawNoteN">10,000</span> simulated tournaments where group outcomes also vary, so a team can have a high QF% overall yet lose in this specific bracket draw — both are correct, they answer different questions.</div>
     </div>
+    <div id="fan-controls" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <label style="font-size:12px;color:var(--text-muted);white-space:nowrap">Root for:</label>
+      <select id="focusTeamSelect" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">
+        <option value="">— Model prediction —</option>
+      </select>
+      <div id="overrideBanner" style="display:none;font-size:11px;color:#f59e0b;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:4px 10px;display:none;align-items:center;gap:6px">
+        <span id="overrideCount">0</span> match(es) manually set · Stage Probabilities are unaffected ·
+        <button id="clearOverrides" style="background:none;border:none;color:#f59e0b;cursor:pointer;font-size:11px;text-decoration:underline;padding:0">Clear all</button>
+      </div>
+    </div>
     <div id="bracketDraw"><div class="loading-msg">Loading bracket…</div></div>
   </div>
 
@@ -145,6 +155,8 @@ let _ratings  = null;   // processed ratings for UI match predictions
 let _eloRaw   = null;   // raw elo-seed.json content for the worker
 let _simResult = null;  // latest Monte Carlo output { N, teams }
 let _simWorker = null;  // active Web Worker instance
+let _focusTeam     = "";   // fan mode: team being rooted for
+let _matchOverrides = {};  // fan mode: { matchId → winner team name }
 
 function setStatus(type, msg) {
   statusDot.className = `dot ${type}`;
@@ -537,7 +549,7 @@ function renderBracket() {
 
 // ── Visual bracket draw ───────────────────────────────────────────────────────
 
-function buildPredictedDraw(allMatches, params) {
+function buildPredictedDraw(allMatches, params, overrides = {}) {
   // 1. Fill unplayed group matches with predicted scores
   const work = allMatches.map(m => {
     if (m.score !== null || !/^[A-L]$/.test(m.group)) return { ...m };
@@ -607,6 +619,12 @@ function buildPredictedDraw(allMatches, params) {
         const as = m.score.et_away ?? m.score.ft_away;
         const winner = m.score.pen_winner || (hs > as ? (teamA || m.home) : (teamB || m.away));
         winners[m.id] = winner;
+      } else if (overrides[m.id] && teamA && teamB) {
+        // Fan override: user forced a specific winner
+        m._predicted = true;
+        m._overridden = true;
+        m._winner = overrides[m.id];
+        winners[m.id] = m._winner;
       } else if (teamA && teamB) {
         const pred = predictMatch({ ...m, home: teamA, away: teamB }, params);
         if (pred) {
@@ -622,8 +640,29 @@ function buildPredictedDraw(allMatches, params) {
 }
 
 function renderBracketDraw(allMatches, params) {
+  // Populate focus-team dropdown once we have team data
+  const sel = document.getElementById("focusTeamSelect");
+  if (sel && sel.options.length === 1 && Object.keys(_teamGroups).length > 0) {
+    const teams = Object.keys(_teamGroups).sort();
+    teams.forEach(t => {
+      const opt = document.createElement("option");
+      opt.value = t; opt.textContent = t;
+      sel.appendChild(opt);
+    });
+  }
+  if (sel && sel.value !== _focusTeam) sel.value = _focusTeam;
+
+  // Update override banner
+  const banner = document.getElementById("overrideBanner");
+  const nOver  = Object.keys(_matchOverrides).length;
+  if (banner) {
+    banner.style.display = nOver > 0 ? "flex" : "none";
+    const cnt = document.getElementById("overrideCount");
+    if (cnt) cnt.textContent = nOver;
+  }
+
   const drawMatches = viewMode === "prediction"
-    ? buildPredictedDraw(allMatches, params || getSliderParams())
+    ? buildPredictedDraw(allMatches, params || getSliderParams(), _matchOverrides)
     : allMatches;
   const el = document.getElementById("bracketDraw");
   if (!el) return;
@@ -707,17 +746,23 @@ function renderBracketDraw(allMatches, params) {
   assignX(rightRoot, false, 0);
 
   // ── SVG helpers ───────────────────────────────────────────────────────────
+  const focusTeam = _focusTeam;
+
   const C = {
-    bg:      "#0a0e1a",
-    slot:    "#141929",
-    slotW:   "rgba(34,197,94,0.13)",
-    border:  "#1e2a42",
-    borderW: "#22c55e",
-    text:    "#e2e8f0",
-    muted:   "#475569",
-    win:     "#4ade80",
-    ph:      "#334155",  // placeholder text
-    line:    "#1e2a42",
+    bg:       "#0a0e1a",
+    slot:     "#141929",
+    slotW:    "rgba(34,197,94,0.13)",
+    slotF:    "rgba(249,115,22,0.18)",   // focus team slot fill
+    border:   "#1e2a42",
+    borderW:  "#22c55e",
+    borderF:  "#f97316",                 // focus team border
+    text:     "#e2e8f0",
+    muted:    "#475569",
+    win:      "#4ade80",
+    winF:     "#fb923c",                 // focus team win colour
+    ph:       "#334155",
+    line:     "#1e2a42",
+    lineF:    "#f97316",                 // focus team path line
   };
 
   const BRACKET_SHORT = {
@@ -738,23 +783,24 @@ function renderBracketDraw(allMatches, params) {
 
   function isPH(raw) { return !raw || /^[0-9WL3]/.test(raw); }
 
-  function slot(x, y, team, scoreVal, wins, predicted) {
+  function slot(x, y, team, scoreVal, wins, predicted, focused) {
     const ph = isPH(team);
-    const fill   = wins ? C.slotW  : C.slot;
-    const stroke = wins ? C.borderW : (predicted ? "#3b82f6" : C.border);
-    const txtCol = wins ? C.win : (ph ? C.ph : (predicted ? "#93c5fd" : C.text));
+    const fill   = focused ? C.slotF : (wins ? C.slotW  : C.slot);
+    const stroke = focused ? C.borderF : (wins ? C.borderW : (predicted ? "#3b82f6" : C.border));
+    const txtCol = focused ? C.winF : (wins ? C.win : (ph ? C.ph : (predicted ? "#93c5fd" : C.text)));
+    const sw     = focused ? "1.5" : "1";
     const flagCode = !ph ? TEAM_FLAGS[team] : null;
     let inner = "";
     if (flagCode) {
       inner += `<image href="https://flagcdn.com/w20/${flagCode}.png" x="${x+3}" y="${y+5}" width="13" height="10"/>`;
-      inner += `<text x="${x+20}" y="${y+SH/2+4}" fill="${txtCol}" font-size="9.5" font-weight="${wins?'600':'400'}">${teamName(team)}</text>`;
+      inner += `<text x="${x+20}" y="${y+SH/2+4}" fill="${txtCol}" font-size="9.5" font-weight="${(wins||focused)?'600':'400'}">${teamName(team)}</text>`;
     } else {
       inner += `<text x="${x+5}" y="${y+SH/2+4}" fill="${txtCol}" font-size="9.5" font-style="${ph?'italic':'normal'}">${teamName(team)}</text>`;
     }
     if (scoreVal != null) {
       inner += `<text x="${x+SW-4}" y="${y+SH/2+4}" text-anchor="end" fill="${C.muted}" font-size="9.5">${scoreVal}</text>`;
     }
-    return `<rect x="${x}" y="${y}" width="${SW}" height="${SH}" fill="${fill}" stroke="${stroke}" stroke-width="1" rx="2"/>${inner}`;
+    return `<rect x="${x}" y="${y}" width="${SW}" height="${SH}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" rx="2"/>${inner}`;
   }
 
   function matchWinner(m) {
@@ -788,26 +834,53 @@ function renderBracketDraw(allMatches, params) {
     const played = !!m.score;
     const [hw, aw] = matchWinner(m);
 
-    // Slots — use _home/_away (resolved team names) when available (prediction mode)
-    const pred = !!m._predicted;
-    // Predicted scores are not shown in the draw (see Fixtures tab for odds/scores)
+    const pred  = !!m._predicted;
     const scoreA = (played && !pred) ? m.score.ft_home : null;
     const scoreB = (played && !pred) ? m.score.ft_away : null;
-    // Green winner highlight only for real (played) results, not predictions
-    out += slot(x, y1, m._home || m.home, scoreA, !pred && hw, pred);
-    out += slot(x, y2, m._away || m.away, scoreB, !pred && aw, pred);
 
-    // Connecting lines to children (drawn from parent)
+    const homeTeam = m._home || m.home;
+    const awayTeam = m._away || m.away;
+    const homeFocus = focusTeam && homeTeam === focusTeam;
+    const awayFocus = focusTeam && awayTeam === focusTeam;
+    const matchHasFocus = homeFocus || awayFocus;
+    const isOverridden  = !!m._overridden;
+
+    // For real results: green winner. For focus team: orange.
+    // Focus team wins (model or override): orange fill. Opponent wins: normal.
+    const focusWins = matchHasFocus && m._winner === focusTeam;
+
+    out += slot(x, y1, homeTeam, scoreA, !pred && hw, pred, homeFocus);
+    out += slot(x, y2, awayTeam, scoreB, !pred && aw, pred, awayFocus);
+
+    // Override badge: small "✎" marker when this match was manually set
+    if (isOverridden) {
+      out += `<text x="${x+SW-3}" y="${y1-2}" text-anchor="end" fill="#f59e0b" font-size="8" title="Manually overridden">✎</text>`;
+    }
+
+    // Clickable overlay: if focus team is in this unplayed match, allow clicking to toggle override
+    if (matchHasFocus && !played) {
+      const overlayH = SH * 2 + TG;
+      const tip = isOverridden
+        ? `Click to remove override (restore model prediction)`
+        : `Click to make ${focusTeam} win this match`;
+      out += `<rect x="${x}" y="${y1}" width="${SW}" height="${overlayH}" fill="transparent"
+        style="cursor:pointer" rx="2"
+        data-mid="${m.id}" data-team="${focusTeam}"
+        data-override="${isOverridden ? '1' : '0'}">
+        <title>${tip}</title>
+      </rect>`;
+    }
+
+    // Connecting lines — orange for the focus team's winning path
     if (top || bot) {
       const tMidY = top ? top.midY : midY;
       const bMidY = bot ? bot.midY : midY;
       const jx = isLeft ? x - RG/2 : x + SW + RG/2;
-      // Horizontal from this match's mid to junction
-      if (isLeft) out += `<line x1="${x}"    y1="${midY}" x2="${jx}" y2="${midY}" stroke="${C.line}" stroke-width="1"/>`;
-      else        out += `<line x1="${x+SW}" y1="${midY}" x2="${jx}" y2="${midY}" stroke="${C.line}" stroke-width="1"/>`;
-      // Vertical bar
+      const lineCol = matchHasFocus && focusWins ? C.lineF : C.line;
+      const lineW   = matchHasFocus && focusWins ? "1.5" : "1";
+      if (isLeft) out += `<line x1="${x}"    y1="${midY}" x2="${jx}" y2="${midY}" stroke="${lineCol}" stroke-width="${lineW}"/>`;
+      else        out += `<line x1="${x+SW}" y1="${midY}" x2="${jx}" y2="${midY}" stroke="${lineCol}" stroke-width="${lineW}"/>`;
       out += `<line x1="${jx}" y1="${tMidY}" x2="${jx}" y2="${bMidY}" stroke="${C.line}" stroke-width="1"/>`;
-      // Horizontals from children to junction
       if (top) {
         const cx = isLeft ? top.x + SW : top.x;
         out += `<line x1="${cx}" y1="${tMidY}" x2="${jx}" y2="${tMidY}" stroke="${C.line}" stroke-width="1"/>`;
@@ -876,6 +949,34 @@ function renderBracketDraw(allMatches, params) {
   svg += "</svg>";
   el.innerHTML = svg;
 }
+
+// ── Fan mode controls ─────────────────────────────────────────────────────────
+
+document.getElementById("focusTeamSelect")?.addEventListener("change", e => {
+  _focusTeam = e.target.value;
+  _matchOverrides = {};   // clear overrides when switching teams
+  try { renderBracketDraw(getAllMatches(), getSliderParams()); } catch {}
+});
+
+document.getElementById("clearOverrides")?.addEventListener("click", () => {
+  _matchOverrides = {};
+  try { renderBracketDraw(getAllMatches(), getSliderParams()); } catch {}
+});
+
+document.getElementById("bracketDraw")?.addEventListener("click", e => {
+  // Delegate clicks from transparent overlay rects
+  const target = e.target.closest("[data-mid]");
+  if (!target) return;
+  const mid      = target.dataset.mid;
+  const team     = target.dataset.team;
+  const wasSet   = target.dataset.override === "1";
+  if (wasSet) {
+    delete _matchOverrides[mid];
+  } else {
+    _matchOverrides[mid] = team;
+  }
+  try { renderBracketDraw(getAllMatches(), getSliderParams()); } catch {}
+});
 
 // ---- Bootstrap --------------------------------------------------------------
 
