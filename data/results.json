@@ -642,5 +642,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "L_69",
+    "group": "L",
+    "home": "Panama",
+    "away": "Croatia",
+    "date": "2026-06-23",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
