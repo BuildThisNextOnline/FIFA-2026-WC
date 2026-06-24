@@ -670,5 +670,33 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "B_10",
+    "group": "B",
+    "home": "Switzerland",
+    "away": "Canada",
+    "date": "2026-06-24",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
+    "id": "B_11",
+    "group": "B",
+    "home": "Bosnia & Herzegovina",
+    "away": "Qatar",
+    "date": "2026-06-24",
+    "score": {
+      "ft_home": 3,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
