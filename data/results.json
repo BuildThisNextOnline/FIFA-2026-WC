@@ -754,5 +754,33 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "E_28",
+    "group": "E",
+    "home": "Curaçao",
+    "away": "Ivory Coast",
+    "date": "2026-06-25",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 2,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
+    "id": "E_29",
+    "group": "E",
+    "home": "Ecuador",
+    "away": "Germany",
+    "date": "2026-06-25",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
