@@ -698,5 +698,33 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "C_16",
+    "group": "C",
+    "home": "Scotland",
+    "away": "Brazil",
+    "date": "2026-06-24",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 3,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
+    "id": "C_17",
+    "group": "C",
+    "home": "Morocco",
+    "away": "Haiti",
+    "date": "2026-06-24",
+    "score": {
+      "ft_home": 4,
+      "ft_away": 2,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
