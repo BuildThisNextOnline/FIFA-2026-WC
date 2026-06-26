@@ -756,6 +756,34 @@
     }
   },
   {
+    "id": "D_22",
+    "group": "D",
+    "home": "Turkey",
+    "away": "USA",
+    "date": "2026-06-25",
+    "score": {
+      "ft_home": 3,
+      "ft_away": 2,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
+    "id": "D_23",
+    "group": "D",
+    "home": "Paraguay",
+    "away": "Australia",
+    "date": "2026-06-25",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "E_28",
     "group": "E",
     "home": "Curaçao",
