@@ -782,5 +782,33 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "F_34",
+    "group": "F",
+    "home": "Japan",
+    "away": "Sweden",
+    "date": "2026-06-25",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
+    "id": "F_35",
+    "group": "F",
+    "home": "Tunisia",
+    "away": "Netherlands",
+    "date": "2026-06-25",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 3,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
