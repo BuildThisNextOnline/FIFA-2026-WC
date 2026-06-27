@@ -922,5 +922,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "L_70",
+    "group": "L",
+    "home": "Panama",
+    "away": "England",
+    "date": "2026-06-27",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 2,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
