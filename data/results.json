@@ -840,6 +840,34 @@
     }
   },
   {
+    "id": "H_46",
+    "group": "H",
+    "home": "Cape Verde",
+    "away": "Saudi Arabia",
+    "date": "2026-06-26",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
+    "id": "H_47",
+    "group": "H",
+    "home": "Uruguay",
+    "away": "Spain",
+    "date": "2026-06-26",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "I_52",
     "group": "I",
     "home": "Norway",
