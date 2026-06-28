@@ -924,6 +924,34 @@
     }
   },
   {
+    "id": "J_58",
+    "group": "J",
+    "home": "Algeria",
+    "away": "Austria",
+    "date": "2026-06-27",
+    "score": {
+      "ft_home": 3,
+      "ft_away": 3,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
+    "id": "J_59",
+    "group": "J",
+    "home": "Jordan",
+    "away": "Argentina",
+    "date": "2026-06-27",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 3,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "K_64",
     "group": "K",
     "home": "Colombia",
