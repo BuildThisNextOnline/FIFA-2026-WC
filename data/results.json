@@ -924,6 +924,34 @@
     }
   },
   {
+    "id": "K_64",
+    "group": "K",
+    "home": "Colombia",
+    "away": "Portugal",
+    "date": "2026-06-27",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
+    "id": "K_65",
+    "group": "K",
+    "home": "DR Congo",
+    "away": "Uzbekistan",
+    "date": "2026-06-27",
+    "score": {
+      "ft_home": 3,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "L_70",
     "group": "L",
     "home": "Panama",
@@ -932,6 +960,20 @@
     "score": {
       "ft_home": 0,
       "ft_away": 2,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
+    "id": "L_71",
+    "group": "L",
+    "home": "Croatia",
+    "away": "Ghana",
+    "date": "2026-06-27",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 1,
       "et_home": null,
       "et_away": null,
       "pen_winner": null
