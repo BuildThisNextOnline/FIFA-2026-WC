@@ -1020,5 +1020,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m76",
+    "group": "R32",
+    "home": "Brazil",
+    "away": "Japan",
+    "date": "2026-06-29",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
