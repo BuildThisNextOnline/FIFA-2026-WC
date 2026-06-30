@@ -1064,6 +1064,20 @@
     }
   },
   {
+    "id": "m77",
+    "group": "R32",
+    "home": "France",
+    "away": "Sweden",
+    "date": "2026-06-30",
+    "score": {
+      "ft_home": 3,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "m78",
     "group": "R32",
     "home": "Ivory Coast",
