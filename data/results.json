@@ -1022,6 +1022,20 @@
     }
   },
   {
+    "id": "m74",
+    "group": "R32",
+    "home": "Germany",
+    "away": "Paraguay",
+    "date": "2026-06-29",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 1,
+      "et_home": 1,
+      "et_away": 1,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "m76",
     "group": "R32",
     "home": "Brazil",
