@@ -1090,5 +1090,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m79",
+    "group": "R32",
+    "home": "Mexico",
+    "away": "Ecuador",
+    "date": "2026-06-30",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
