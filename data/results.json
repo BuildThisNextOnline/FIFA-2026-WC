@@ -1118,5 +1118,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m82",
+    "group": "R32",
+    "home": "Belgium",
+    "away": "Senegal",
+    "date": "2026-07-01",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 2,
+      "et_home": 3,
+      "et_away": 2,
+      "pen_winner": null
+    }
   }
 ]
