@@ -1146,5 +1146,19 @@
       "et_away": 2,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m84",
+    "group": "R32",
+    "home": "Spain",
+    "away": "Austria",
+    "date": "2026-07-02",
+    "score": {
+      "ft_home": 3,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
