@@ -1120,6 +1120,20 @@
     }
   },
   {
+    "id": "m81",
+    "group": "R32",
+    "home": "USA",
+    "away": "Bosnia & Herzegovina",
+    "date": "2026-07-01",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "m82",
     "group": "R32",
     "home": "Belgium",
