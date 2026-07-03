@@ -1174,5 +1174,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m85",
+    "group": "R32",
+    "home": "Switzerland",
+    "away": "Algeria",
+    "date": "2026-07-02",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
