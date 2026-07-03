@@ -1188,5 +1188,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m88",
+    "group": "R32",
+    "home": "Australia",
+    "away": "Egypt",
+    "date": "2026-07-03",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 1,
+      "et_home": 1,
+      "et_away": 1,
+      "pen_winner": null
+    }
   }
 ]
