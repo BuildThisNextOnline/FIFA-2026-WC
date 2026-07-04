@@ -1190,6 +1190,20 @@
     }
   },
   {
+    "id": "m86",
+    "group": "R32",
+    "home": "Argentina",
+    "away": "Cape Verde",
+    "date": "2026-07-03",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 1,
+      "et_home": 3,
+      "et_away": 2,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "m88",
     "group": "R32",
     "home": "Australia",
