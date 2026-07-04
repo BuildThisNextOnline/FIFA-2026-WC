@@ -633,6 +633,7 @@ function buildPredictedDraw(allMatches, params, overrides = {}) {
           m._predicted = true;
           m._winner = pred.odds.home >= pred.odds.away ? teamA : teamB;
           winners[m.id] = m._winner;
+        } else {
         }
       }
     }
@@ -678,15 +679,37 @@ function renderBracketDraw(allMatches, params) {
   const matchById = {};
   drawMatches.forEach(m => { if (m.id) matchById[m.id] = m; });
 
-  // Resolve "W{n}" placeholder → match object
+  // Build winner-name → match index so we can follow links even when the feed
+  // has replaced "W73" placeholders with actual team names.
+  const winnerToMatch = {};
+  const KNOCKOUT_ROUNDS = new Set(["R32","R16","QF","SF"]);
+  drawMatches.forEach(m => {
+    if (!KNOCKOUT_ROUNDS.has(m.group)) return;
+    const w = m._winner
+      || (m.score ? (m.score.pen_winner
+          || ((m.score.et_home ?? m.score.ft_home) > (m.score.et_away ?? m.score.ft_away)
+              ? (m._home || m.home) : (m._away || m.away)))
+          : null);
+    // Only record first (lowest round) win — later rounds must not overwrite,
+    // or resolveW would find a QF match when looking for an R32 parent.
+    if (w && typeof w === "string" && !/^[0-9WL3]/.test(w) && !winnerToMatch[w]) winnerToMatch[w] = m;
+  });
+
+  // Resolve "W{n}" placeholder → match object.
+  // Falls back to winnerToMatch when the feed has replaced W-refs with team names.
   function resolveW(ref) {
-    if (!ref || !ref.startsWith("W")) return null;
-    return matchById[`m${ref.slice(1)}`] || null;
+    if (!ref) return null;
+    if (ref.startsWith("W")) return matchById[`m${ref.slice(1)}`] || winnerToMatch[ref] || null;
+    if (!/^[0-9L3]/.test(ref)) return winnerToMatch[ref] || null;
+    return null;
   }
 
-  // Build a bracket tree node recursively from a match
+  // Build a bracket tree node recursively from a match.
+  // R32 matches are always leaves — their inputs come from the group stage,
+  // not from other knockout matches, so we stop recursion there.
   function makeNode(m) {
     if (!m) return null;
+    if (m.group === "R32") return { m, top: null, bot: null };
     return { m, top: makeNode(resolveW(m.home)), bot: makeNode(resolveW(m.away)) };
   }
 
@@ -832,7 +855,7 @@ function renderBracketDraw(allMatches, params) {
   }
   svg += `<text x="${CHAMP_X+SW/2}" y="12" fill="${C.muted}" font-size="8" text-anchor="middle">CHAMPION</text>`;
 
-  function renderNode(node, isLeft) {
+  function renderNode(node, isLeft, knownWinner) {
     if (!node) return "";
     let out = "";
     const { m, x, y1, y2, midY, top, bot } = node;
@@ -850,12 +873,16 @@ function renderBracketDraw(allMatches, params) {
     const matchHasFocus = homeFocus || awayFocus;
     const isOverridden  = !!m._overridden;
 
-    // For real results: green winner. For focus team: orange.
-    // Focus team wins (model or override): orange fill. Opponent wins: normal.
+    // Green border only for real results (not predicted). Use knownWinner (the team
+    // that appears in the next round's slot) to handle penalty shootouts correctly;
+    // fall back to score comparison when no parent context is available.
+    const homeWins = !pred && (knownWinner ? homeTeam === knownWinner : hw);
+    const awayWins = !pred && (knownWinner ? awayTeam === knownWinner : aw);
+
     const focusWins = matchHasFocus && m._winner === focusTeam;
 
-    out += slot(x, y1, homeTeam, scoreA, !pred && hw, pred, homeFocus);
-    out += slot(x, y2, awayTeam, scoreB, !pred && aw, pred, awayFocus);
+    out += slot(x, y1, homeTeam, scoreA, homeWins, pred, homeFocus);
+    out += slot(x, y2, awayTeam, scoreB, awayWins, pred, awayFocus);
 
     // Override badge: small "✎" marker when this match was manually set
     if (isOverridden) {
@@ -904,8 +931,12 @@ function renderBracketDraw(allMatches, params) {
       }
     }
 
-    out += renderNode(top, isLeft);
-    out += renderNode(bot, isLeft);
+    // Pass the resolved team name as knownWinner to the child so it can green-border
+    // the correct slot even when the score alone is ambiguous (e.g. penalty shootouts).
+    const topWinner = !isPH(homeTeam) ? homeTeam : null;
+    const botWinner = !isPH(awayTeam) ? awayTeam : null;
+    out += renderNode(top, isLeft, topWinner);
+    out += renderNode(bot, isLeft, botWinner);
     return out;
   }
 
