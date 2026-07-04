@@ -1230,5 +1230,19 @@
       "et_away": 1,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m90",
+    "group": "R16",
+    "home": "Canada",
+    "away": "Morocco",
+    "date": "2026-07-04",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 3,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
