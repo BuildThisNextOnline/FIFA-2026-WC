@@ -1232,6 +1232,20 @@
     }
   },
   {
+    "id": "m89",
+    "group": "R16",
+    "home": "Paraguay",
+    "away": "France",
+    "date": "2026-07-04",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "m90",
     "group": "R16",
     "home": "Canada",
