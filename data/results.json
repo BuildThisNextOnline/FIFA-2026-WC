@@ -1258,5 +1258,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m91",
+    "group": "R16",
+    "home": "Brazil",
+    "away": "Norway",
+    "date": "2026-07-05",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 2,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
