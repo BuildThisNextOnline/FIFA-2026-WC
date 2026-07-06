@@ -1272,5 +1272,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m92",
+    "group": "R16",
+    "home": "Mexico",
+    "away": "England",
+    "date": "2026-07-05",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 3,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
