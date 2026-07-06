@@ -1286,5 +1286,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m93",
+    "group": "R16",
+    "home": "Portugal",
+    "away": "Spain",
+    "date": "2026-07-06",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
