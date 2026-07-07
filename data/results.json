@@ -1300,5 +1300,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m94",
+    "group": "R16",
+    "home": "USA",
+    "away": "Belgium",
+    "date": "2026-07-06",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 4,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
