@@ -1314,5 +1314,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m95",
+    "group": "R16",
+    "home": "Argentina",
+    "away": "Egypt",
+    "date": "2026-07-07",
+    "score": {
+      "ft_home": 3,
+      "ft_away": 2,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
