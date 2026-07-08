@@ -1328,5 +1328,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m96",
+    "group": "R16",
+    "home": "Switzerland",
+    "away": "Colombia",
+    "date": "2026-07-07",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 0,
+      "et_home": 0,
+      "et_away": 0,
+      "pen_winner": null
+    }
   }
 ]
