@@ -1342,5 +1342,19 @@
       "et_away": 0,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m97",
+    "group": "QF",
+    "home": "France",
+    "away": "Morocco",
+    "date": "2026-07-09",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 0,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
