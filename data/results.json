@@ -1356,5 +1356,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m98",
+    "group": "QF",
+    "home": "Spain",
+    "away": "Belgium",
+    "date": "2026-07-10",
+    "score": {
+      "ft_home": 2,
+      "ft_away": 1,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
