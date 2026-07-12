@@ -1372,6 +1372,20 @@
     }
   },
   {
+    "id": "m100",
+    "group": "QF",
+    "home": "Argentina",
+    "away": "Switzerland",
+    "date": "2026-07-11",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 1,
+      "et_home": 3,
+      "et_away": 1,
+      "pen_winner": null
+    }
+  },
+  {
     "id": "m99",
     "group": "QF",
     "home": "Norway",
