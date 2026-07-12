@@ -1370,5 +1370,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m99",
+    "group": "QF",
+    "home": "Norway",
+    "away": "England",
+    "date": "2026-07-11",
+    "score": {
+      "ft_home": 1,
+      "ft_away": 1,
+      "et_home": 1,
+      "et_away": 2,
+      "pen_winner": null
+    }
   }
 ]
