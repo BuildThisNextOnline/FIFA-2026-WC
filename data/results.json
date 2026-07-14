@@ -1398,5 +1398,19 @@
       "et_away": 2,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m101",
+    "group": "SF",
+    "home": "France",
+    "away": "Spain",
+    "date": "2026-07-14",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 2,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
