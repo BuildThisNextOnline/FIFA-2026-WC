@@ -1426,5 +1426,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m103",
+    "group": "3rd",
+    "home": "France",
+    "away": "England",
+    "date": "2026-07-18",
+    "score": {
+      "ft_home": 4,
+      "ft_away": 6,
+      "et_home": null,
+      "et_away": null,
+      "pen_winner": null
+    }
   }
 ]
