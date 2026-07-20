@@ -1440,5 +1440,19 @@
       "et_away": null,
       "pen_winner": null
     }
+  },
+  {
+    "id": "m104",
+    "group": "Final",
+    "home": "Spain",
+    "away": "Argentina",
+    "date": "2026-07-19",
+    "score": {
+      "ft_home": 0,
+      "ft_away": 0,
+      "et_home": 1,
+      "et_away": 0,
+      "pen_winner": null
+    }
   }
 ]
