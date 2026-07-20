@@ -86,6 +86,7 @@
     <button class="tab-btn" data-tab="standings">Standings</button>
     <button class="tab-btn" data-tab="bracket">Stage Probabilities</button>
     <button class="tab-btn" data-tab="draw">Tournament Draw</button>
+    <button class="tab-btn" data-tab="scorecard">Scorecard</button>
   </div>
 
   <div id="tab-fixtures">
@@ -121,6 +122,10 @@
     <div id="bracketDraw"><div class="loading-msg">Loading bracket…</div></div>
   </div>
 
+  <div id="tab-scorecard" style="display:none">
+    <div id="scorecardContent"><div class="loading-msg">Loading scorecard…</div></div>
+  </div>
+
   <div id="tab-standings" style="display:none">
     <div style="color:var(--text-muted);font-size:11px;margin-bottom:16px">
       Standings use live results · W/D/L bars use Elo seed ratings ·
@@ -143,6 +148,7 @@ import { initRatings } from "./js/ratings.js";
 import { expectedGoals, scorelineMatrix, matchOdds, mostLikelyScore } from "./js/model.js";
 import { rankGroup, rankThirdPlace, selectThirdPlaceQualifiers, slotThirdPlace, THIRD_PLACE_SLOTS } from "./js/tournament.js";
 import { DEFAULTS as MODEL_DEFAULTS } from "./js/model.js";
+import { runSimulation } from "./js/sim.js";
 
 const statusDot  = document.getElementById("statusDot");
 const statusText = document.getElementById("statusText");
@@ -641,6 +647,146 @@ function buildPredictedDraw(allMatches, params, overrides = {}) {
   return work;
 }
 
+function renderScorecard() {
+  const el = document.getElementById("scorecardContent");
+  if (!el || el.dataset.rendered) return;
+  el.dataset.rendered = "1";
+  el.innerHTML = '<div class="loading-msg">Computing pre-tournament predictions…</div>';
+
+  setTimeout(() => {
+    const allMatches = getAllMatches();
+    const params = MODEL_DEFAULTS;
+
+    // ── Group stage: predict every match as if unplayed, compare to actual ──
+    const GROUPS = "ABCDEFGHIJKL".split("");
+    let totalPlayed = 0, totalCorrect = 0;
+    const groupSections = GROUPS.map(g => {
+      const matches = allMatches.filter(m => m.group === g);
+      const rows = matches.map(m => {
+        const pred = predictMatch(m, params);
+        if (!pred || !m.score) return null;
+        const {odds, best} = pred;
+        const po = odds.home > odds.draw && odds.home > odds.away ? "H"
+                 : odds.away > odds.draw ? "A" : "D";
+        const hs = m.score.et_home ?? m.score.ft_home;
+        const as = m.score.et_away ?? m.score.ft_away;
+        const ao = hs > as ? "H" : as > hs ? "A" : "D";
+        const hit = po === ao;
+        totalPlayed++; if (hit) totalCorrect++;
+        const flag = t => (TEAM_FLAGS[t] ? `<img src="https://flagcdn.com/w20/${TEAM_FLAGS[t]}.png" style="height:10px;margin-right:3px;vertical-align:middle">` : "");
+        const hn = t => (t.length > 12 ? t.slice(0,11)+"…" : t);
+        const predScore = `${best.homeGoals}–${best.awayGoals}`;
+        const actScore  = `${hs}–${as}`;
+        const hw = ao === "H", aw = ao === "A";
+        return `<tr>
+          <td style="text-align:right;padding:2px 4px">${flag(m.home)}<span style="${hw?"font-weight:600;color:var(--text)":"color:var(--text-muted)"}">${hn(m.home)}</span></td>
+          <td style="text-align:center;padding:2px 6px;font-size:10px;color:var(--text-muted)">${predScore}</td>
+          <td style="text-align:center;padding:2px 4px;font-size:10px;color:#475569">→</td>
+          <td style="text-align:center;padding:2px 6px;font-weight:600;color:${hit?"#4ade80":"#f87171"}">${actScore}</td>
+          <td style="padding:2px 4px">${flag(m.away)}<span style="${aw?"font-weight:600;color:var(--text)":"color:var(--text-muted)"}">${hn(m.away)}</span></td>
+          <td style="text-align:center;padding:2px 6px;font-size:11px">${hit?"✓":"✗"}</td>
+        </tr>`;
+      }).filter(Boolean).join("");
+      return `<div style="margin-bottom:16px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text-muted);margin-bottom:4px">GROUP ${g}</div>
+        <table style="border-collapse:collapse;width:100%;font-size:11px">${rows}</table>
+      </div>`;
+    });
+
+    // ── Knockout: pre-tournament simulation vs actual ──
+    const strippedMatches = allMatches.map(m => ({...m, score: null}));
+    const preSim = runSimulation(strippedMatches, _eloRaw, params, 25000, 42);
+
+    // Actual stage reached per team
+    const inRound = {};
+    for (const rnd of ["R32","R16","QF","SF","Final"]) {
+      inRound[rnd] = new Set(
+        allMatches.filter(m => m.group === rnd && m.score).flatMap(m => [m.home, m.away])
+      );
+    }
+    const finalM = allMatches.find(m => m.group === "Final" && m.score);
+    let champion = null;
+    if (finalM) {
+      const s = finalM.score, hs = s.et_home ?? s.ft_home, as = s.et_away ?? s.ft_away;
+      champion = s.pen_winner || (hs > as ? finalM.home : finalM.away);
+    }
+
+    const stageLabel = team => {
+      if (champion === team)         return { label: "🏆 Champion",   rank: 6 };
+      if (inRound["Final"]?.has(team))  return { label: "Final",       rank: 5 };
+      if (inRound["SF"]?.has(team))     return { label: "Semi-final",  rank: 4 };
+      if (inRound["QF"]?.has(team))     return { label: "Quarter-final", rank: 3 };
+      if (inRound["R16"]?.has(team))    return { label: "Round of 16", rank: 2 };
+      if (inRound["R32"]?.has(team))    return { label: "Round of 32", rank: 1 };
+      return                             { label: "Group stage",       rank: 0 };
+    };
+
+    const allTeams = [...new Set(
+      allMatches.filter(m => /^[A-L]$/.test(m.group)).flatMap(m => [m.home, m.away])
+    )];
+
+    // Sort by pre-tournament champion probability descending
+    allTeams.sort((a, b) => (preSim.teams[b]?.champion ?? 0) - (preSim.teams[a]?.champion ?? 0));
+
+    const stageColour = rank => ["#475569","#3b82f6","#06b6d4","#f59e0b","#f97316","#22c55e","#fbbf24"][rank] || "#475569";
+    const pct = v => v == null ? "—" : (v*100).toFixed(v >= 0.1 ? 1 : 2) + "%";
+
+    const koRows = allTeams.map((team, i) => {
+      const p = preSim.teams[team] || {};
+      const { label, rank } = stageLabel(team);
+      const flag = TEAM_FLAGS[team] ? `<img src="https://flagcdn.com/w20/${TEAM_FLAGS[team]}.png" style="height:10px;margin-right:4px;vertical-align:middle">` : "";
+      const grp = allMatches.find(m => /^[A-L]$/.test(m.group) && (m.home===team||m.away===team))?.group || "";
+      return `<tr style="border-bottom:1px solid #1e2a42">
+        <td style="padding:4px 6px;text-align:right;color:var(--text-muted);font-size:10px">${i+1}</td>
+        <td style="padding:4px 6px">${flag}<span style="font-size:11px">${team}</span></td>
+        <td style="padding:4px 6px;text-align:center;font-size:10px;color:var(--text-muted)">${grp}</td>
+        <td style="padding:4px 6px;text-align:center;font-size:10px;color:#94a3b8">${pct(p.r32)}</td>
+        <td style="padding:4px 6px;text-align:center;font-size:10px;color:#94a3b8">${pct(p.r16)}</td>
+        <td style="padding:4px 6px;text-align:center;font-size:10px;color:#94a3b8">${pct(p.qf)}</td>
+        <td style="padding:4px 6px;text-align:center;font-size:10px;color:#94a3b8">${pct(p.sf)}</td>
+        <td style="padding:4px 6px;text-align:center;font-size:10px;color:#94a3b8">${pct(p.final)}</td>
+        <td style="padding:4px 6px;text-align:center;font-size:10px;color:#94a3b8">${pct(p.champion)}</td>
+        <td style="padding:4px 8px;text-align:center">
+          <span style="font-size:10px;font-weight:600;color:${stageColour(rank)};white-space:nowrap">${label}</span>
+        </td>
+      </tr>`;
+    }).join("");
+
+    const accuracy = `${totalCorrect}/${totalPlayed} (${(totalCorrect/totalPlayed*100).toFixed(1)}%)`;
+
+    el.innerHTML = `
+      <div style="max-width:1100px;margin:0 auto">
+
+        <h3 style="font-size:13px;font-weight:700;color:var(--text);margin:0 0 4px">Knockout Stage: Pre-tournament predictions vs reality</h3>
+        <p style="font-size:11px;color:var(--text-muted);margin:0 0 12px">Pre-tournament model (default weights, 25k simulations) — probability of reaching each stage vs what actually happened.</p>
+        <div style="overflow-x:auto;margin-bottom:32px">
+          <table style="border-collapse:collapse;width:100%;font-size:11px">
+            <thead><tr style="border-bottom:2px solid #1e2a42">
+              <th style="padding:4px 6px;color:var(--text-muted);text-align:right;font-weight:400">#</th>
+              <th style="padding:4px 6px;color:var(--text-muted);text-align:left;font-weight:400">Team</th>
+              <th style="padding:4px 6px;color:var(--text-muted);font-weight:400">Grp</th>
+              <th style="padding:4px 6px;color:var(--text-muted);font-weight:400">Qualify%</th>
+              <th style="padding:4px 6px;color:var(--text-muted);font-weight:400">R16%</th>
+              <th style="padding:4px 6px;color:var(--text-muted);font-weight:400">QF%</th>
+              <th style="padding:4px 6px;color:var(--text-muted);font-weight:400">SF%</th>
+              <th style="padding:4px 6px;color:var(--text-muted);font-weight:400">Final%</th>
+              <th style="padding:4px 6px;color:var(--text-muted);font-weight:400">Win%</th>
+              <th style="padding:4px 6px;color:var(--text-muted);font-weight:400">Actual</th>
+            </tr></thead>
+            <tbody>${koRows}</tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size:13px;font-weight:700;color:var(--text);margin:0 0 4px">Group Stage: Predicted scoreline vs actual result</h3>
+        <p style="font-size:11px;color:var(--text-muted);margin:0 0 12px">Correct winner predicted: <strong style="color:var(--text)">${accuracy}</strong> — predicted score shown left of arrow, actual right. Winner bold.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px 24px">
+          ${groupSections.join("")}
+        </div>
+
+      </div>`;
+  }, 0);
+}
+
 function renderBracketDraw(allMatches, params) {
   // Populate focus-team dropdown once we have team data
   const sel = document.getElementById("focusTeamSelect");
@@ -1119,6 +1265,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
     document.querySelectorAll("[id^='tab-']").forEach(el => el.style.display = "none");
     const target = document.getElementById(`tab-${btn.dataset.tab}`);
     if (target) target.style.display = "";
+    if (btn.dataset.tab === "scorecard") renderScorecard();
   });
 });
 
