@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>World Cup 2026 Probability Tracker</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=2" />
   <script data-goatcounter="https://btnonline-fifa-2026-wc.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
@@ -758,10 +758,17 @@ function renderScorecard() {
       champion: team => champion === team,
     };
 
+    const pctColour = v => {
+      if (v == null || v === 0) return "#475569";
+      if (v < 0.25) return "#f97316";   // orange  0–25%
+      if (v < 0.50) return "#eab308";   // yellow 25–50%
+      if (v < 0.75) return "#3b82f6";   // blue   50–75%
+      return "#22c55e";                  // green  75–100%
+    };
     const pct = (v, reached) => {
       if (v == null) return { val: "—", bg: "transparent", colour: "#475569" };
       const s = v >= 0.0095 ? (v*100).toFixed(v >= 0.1 ? 1 : 2) + "%" : v > 0 ? "<1%" : "—";
-      const colour = v === 0 ? "#475569" : reached ? "#22c55e" : "#94a3b8";
+      const colour = pctColour(v);
       const bg     = reached ? "rgba(34,197,94,0.08)" : "transparent";
       return { val: s, bg, colour };
     };
@@ -775,7 +782,7 @@ function renderScorecard() {
       const cells = STAGE_KEYS.map(k => {
         const reached = stageReached[k](team);
         const { val, bg, colour } = pct(p[k], reached);
-        return `<td style="padding:4px 6px;text-align:center;font-size:10px;background:${bg}"><span style="color:${colour};font-weight:${reached?"600":"400"}">${val}</span></td>`;
+        return `<td style="padding:4px 6px;text-align:center;font-size:10px;background:${bg}"><span style="color:${colour}">${val}</span></td>`;
       }).join("");
       return `<tr style="border-bottom:1px solid #1e2a42">
         <td style="padding:4px 6px;text-align:right;color:var(--text-muted);font-size:10px">${i+1}</td>
