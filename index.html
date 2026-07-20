@@ -679,45 +679,53 @@ function renderBracketDraw(allMatches, params) {
   const matchById = {};
   drawMatches.forEach(m => { if (m.id) matchById[m.id] = m; });
 
-  // Build winner-name → match index so we can follow links even when the feed
-  // has replaced "W73" placeholders with actual team names.
-  const winnerToMatch = {};
+  // Build team-in-round map: team → { round → match they played in }.
+  // This lets us resolve a team name to the CORRECT prior-round match even
+  // after the feed has replaced all W-refs with actual team names.
   const KNOCKOUT_ROUNDS = new Set(["R32","R16","QF","SF"]);
+  const BRACKET_ROUND_ORDER = ["R32","R16","QF","SF","Final"];
+  const teamInRound = {};  // { "France": { "R32": m77, "R16": m89, "QF": m97, … } }
   drawMatches.forEach(m => {
-    if (!KNOCKOUT_ROUNDS.has(m.group)) return;
-    const w = m._winner
-      || (m.score ? (m.score.pen_winner
-          || ((m.score.et_home ?? m.score.ft_home) > (m.score.et_away ?? m.score.ft_away)
-              ? (m._home || m.home) : (m._away || m.away)))
-          : null);
-    // Only record first (lowest round) win — later rounds must not overwrite,
-    // or resolveW would find a QF match when looking for an R32 parent.
-    if (w && typeof w === "string" && !/^[0-9WL3]/.test(w) && !winnerToMatch[w]) winnerToMatch[w] = m;
+    if (!KNOCKOUT_ROUNDS.has(m.group) && m.group !== "Final") return;
+    for (const team of [m._home || m.home, m._away || m.away]) {
+      if (team && !/^[0-9WL3]/.test(team)) {
+        if (!teamInRound[team]) teamInRound[team] = {};
+        teamInRound[team][m.group] = m;
+      }
+    }
   });
 
-  // Resolve "W{n}" placeholder → match object.
-  // Falls back to winnerToMatch when the feed has replaced W-refs with team names.
-  function resolveW(ref) {
+  // Resolve a home/away ref to a match object, using the round of the calling
+  // match so we always step exactly one round back (avoids skipping levels or
+  // creating circular references when the feed has replaced W-refs with names).
+  function resolveW(ref, fromRound) {
     if (!ref) return null;
-    if (ref.startsWith("W")) return matchById[`m${ref.slice(1)}`] || winnerToMatch[ref] || null;
-    if (!/^[0-9L3]/.test(ref)) return winnerToMatch[ref] || null;
+    if (ref.startsWith("W")) return matchById[`m${ref.slice(1)}`] || null;
+    if (!/^[0-9L3]/.test(ref)) {
+      // Real team name: find the match they played in the immediately prior round.
+      const roundIdx = BRACKET_ROUND_ORDER.indexOf(fromRound);
+      if (roundIdx > 0) {
+        const priorRound = BRACKET_ROUND_ORDER[roundIdx - 1];
+        const m = teamInRound[ref]?.[priorRound];
+        if (m) return m;
+      }
+    }
     return null;
   }
 
   // Build a bracket tree node recursively from a match.
-  // R32 matches are always leaves — their inputs come from the group stage,
-  // not from other knockout matches, so we stop recursion there.
+  // R32 matches are always leaves — their inputs come from the group stage.
   function makeNode(m) {
     if (!m) return null;
     if (m.group === "R32") return { m, top: null, bot: null };
-    return { m, top: makeNode(resolveW(m.home)), bot: makeNode(resolveW(m.away)) };
+    return { m, top: makeNode(resolveW(m.home, m.group)), bot: makeNode(resolveW(m.away, m.group)) };
   }
 
   const finalM = drawMatches.find(m => m.group === "Final");
   if (!finalM) { el.innerHTML = '<div class="loading-msg">Bracket draw not available yet</div>'; return; }
 
-  const leftRoot  = makeNode(resolveW(finalM.home));   // one SF side
-  const rightRoot = makeNode(resolveW(finalM.away));   // other SF side
+  const leftRoot  = makeNode(resolveW(finalM.home, "Final"));   // one SF side
+  const rightRoot = makeNode(resolveW(finalM.away, "Final"));   // other SF side
 
   // ── Layout constants ──────────────────────────────────────────────────────
   const SW = 100, SH = 22, TG = 2;   // slot width/height, team gap
