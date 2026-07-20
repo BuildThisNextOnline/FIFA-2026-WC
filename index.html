@@ -374,7 +374,7 @@ function renderFixtures(matches, params = {}) {
       const timeLabel = toGMT(m.time);
 
       const scoreText = played
-        ? `${m.score.ft_home}–${m.score.ft_away}`
+        ? `${m.score.et_home ?? m.score.ft_home}–${m.score.et_away ?? m.score.ft_away}`
         : (showPred ? `${pred.best.homeGoals}–${pred.best.awayGoals}` : "vs");
 
       const oddsHtml = showPred ? `
@@ -863,8 +863,8 @@ function renderBracketDraw(allMatches, params) {
     const [hw, aw] = matchWinner(m);
 
     const pred  = !!m._predicted;
-    const scoreA = (played && !pred) ? m.score.ft_home : null;
-    const scoreB = (played && !pred) ? m.score.ft_away : null;
+    const scoreA = (played && !pred) ? (m.score.et_home ?? m.score.ft_home) : null;
+    const scoreB = (played && !pred) ? (m.score.et_away ?? m.score.ft_away) : null;
 
     const homeTeam = m._home || m.home;
     const awayTeam = m._away || m.away;
@@ -966,7 +966,10 @@ function renderBracketDraw(allMatches, params) {
   const finalOverridable = !finalM.score || finalM._predicted;
   const finalIsOverridden = !!finalM._overridden;
 
-  svg += slot(FINAL_X, fySlot, leftFinalist, null,
+  const finalScoreL = (fp && !fp_pred) ? (finalM.score.et_home ?? finalM.score.ft_home) : null;
+  const finalScoreR = (fp && !fp_pred) ? (finalM.score.et_away ?? finalM.score.ft_away) : null;
+
+  svg += slot(FINAL_X, fySlot, leftFinalist, finalScoreL,
               !fp_pred && champTeam === leftFinalist, fp_pred, leftFocus);
 
   // Champion slot (gold or green; orange tint if focus team is champion)
@@ -985,7 +988,7 @@ function renderBracketDraw(allMatches, params) {
   }
 
   // Right finalist slot
-  svg += slot(RIGHT_FINAL_X, fySlot, rightFinalist, null,
+  svg += slot(RIGHT_FINAL_X, fySlot, rightFinalist, finalScoreR,
               !fp_pred && champTeam === rightFinalist, fp_pred, rightFocus);
 
   // Clickable overlay for the Final if focus team is a finalist
