@@ -657,6 +657,86 @@ function renderScorecard() {
     const allMatches = getAllMatches();
     const params = MODEL_DEFAULTS;
 
+    // ── Rebuild pre-tournament bracket (restore group-position placeholders & W-refs) ──
+    // The openfootball feed replaced placeholders (1A, W73, 3A/B/C/D/F) with real team
+    // names as matches were played. We reconstruct the original structure so the
+    // pre-tournament simulation can correctly chain teams through all rounds.
+    function buildPreTournamentMatches(matches) {
+      // 1. Compute actual group standings from FT scores (for group-position placeholders)
+      const pts = {}, gd = {}, gf = {}, teamGrp = {};
+      for (const m of matches) {
+        if (!/^[A-L]$/.test(m.group) || !m.score) continue;
+        const hs = m.score.ft_home, as = m.score.ft_away;
+        for (const [t, h, a] of [[m.home, hs, as], [m.away, as, hs]]) {
+          if (!pts[t]) { pts[t] = 0; gd[t] = 0; gf[t] = 0; teamGrp[t] = m.group; }
+          pts[t] += h > a ? 3 : h === a ? 1 : 0;
+          gd[t] += h - a;
+          gf[t] += h;
+        }
+      }
+
+      // 2. Team → group position ("1A", "2B", "3C", ...)
+      const teamPos = {};
+      for (const g of "ABCDEFGHIJKL") {
+        const ranked = Object.keys(pts)
+          .filter(t => teamGrp[t] === g)
+          .sort((a, b) => pts[b] - pts[a] || gd[b] - gd[a] || gf[b] - gf[a]);
+        ranked.forEach((t, i) => { teamPos[t] = `${i + 1}${g}`; });
+      }
+
+      // 3. For 3rd-place slots in R32: find the eligible-groups placeholder
+      //    by matching the slot's known opponent (e.g. "1E") to the actual team in the match.
+      const eligKeyToSlot = {};
+      for (const s of THIRD_PLACE_SLOTS) {
+        eligKeyToSlot[[...s.eligible].sort().join("")] = s;
+      }
+      const opponentPosToSlot = {};
+      for (const s of THIRD_PLACE_SLOTS) opponentPosToSlot[s.opponent] = s;
+
+      const thirdPlaceholder = {}; // matchId → "3A/B/C/D/F"
+      for (const m of matches.filter(m => m.group === "R32")) {
+        const hp = teamPos[m.home], ap = teamPos[m.away];
+        // Determine which side (if any) is a 3rd-place team
+        const [thirdPos, otherPos] = hp?.startsWith("3") ? [hp, ap] : ap?.startsWith("3") ? [ap, hp] : [null, null];
+        if (!thirdPos || !otherPos) continue;
+        const slot = opponentPosToSlot[otherPos];
+        if (slot) thirdPlaceholder[m.id] = `3${slot.eligible.join("/")}`;
+      }
+
+      // 4. Track which match each team won per round (for W-refs in R16+)
+      const prevRound = { R16: "R32", QF: "R16", SF: "QF", Final: "SF" };
+      const teamWonIn = {}; // team → { round → matchId }
+      for (const m of matches) {
+        if (!["R32","R16","QF","SF","Final"].includes(m.group) || !m.score) continue;
+        const hs = m.score.et_home ?? m.score.ft_home, as = m.score.et_away ?? m.score.ft_away;
+        const w = m.score.pen_winner || (hs > as ? m.home : m.away);
+        if (w) { if (!teamWonIn[w]) teamWonIn[w] = {}; teamWonIn[w][m.group] = m.id; }
+      }
+
+      // 5. Reconstruct all matches with original placeholders, scores stripped
+      return matches.map(m => {
+        if (!/^(R32|R16|QF|SF|Final)$/.test(m.group)) return { ...m, score: null };
+
+        if (m.group === "R32") {
+          const hp = teamPos[m.home], ap = teamPos[m.away];
+          const tph = thirdPlaceholder[m.id];
+          const homeStr = hp?.startsWith("3") ? (tph || hp) : hp || m.home;
+          const awayStr = ap?.startsWith("3") ? (tph || ap) : ap || m.away;
+          return { ...m, score: null, home: homeStr, away: awayStr };
+        }
+
+        // R16 / QF / SF / Final — restore W-refs from the prior round
+        const pr = prevRound[m.group];
+        const homeRef = pr && teamWonIn[m.home]?.[pr];
+        const awayRef = pr && teamWonIn[m.away]?.[pr];
+        return {
+          ...m, score: null,
+          home: homeRef ? `W${homeRef.replace("m", "")}` : m.home,
+          away: awayRef ? `W${awayRef.replace("m", "")}` : m.away,
+        };
+      });
+    }
+
     // ── Group stage: predict every match as if unplayed, compare to actual ──
     const GROUPS = "ABCDEFGHIJKL".split("");
     let totalPlayed = 0, totalCorrect = 0;
@@ -708,8 +788,8 @@ function renderScorecard() {
     });
 
     // ── Knockout: pre-tournament simulation vs actual ──
-    const strippedMatches = allMatches.map(m => ({...m, score: null}));
-    const preSim = runSimulation(strippedMatches, _eloRaw, params, 25000, 42);
+    const preTournamentMatches = buildPreTournamentMatches(allMatches);
+    const preSim = runSimulation(preTournamentMatches, _eloRaw, params, 25000, 42);
 
     // Actual stage reached per team
     const inRound = {};
