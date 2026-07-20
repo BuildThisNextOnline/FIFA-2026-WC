@@ -693,9 +693,17 @@ function renderScorecard() {
           <td style="text-align:center;padding:2px 3px">${sVerd}</td>
         </tr>`;
       }).filter(Boolean).join("");
+      const hdr = `<tr style="border-bottom:1px solid #1e2a42">
+        <th colspan="2" style="padding:2px 4px;font-size:9px;font-weight:400;color:var(--text-muted);text-align:right">Predicted</th>
+        <th style="padding:2px 2px"></th>
+        <th style="padding:2px 4px;font-size:9px;font-weight:400;color:#7dd3fc;text-align:center">Actual</th>
+        <th colspan="2" style="padding:2px 4px"></th>
+        <th style="padding:2px 3px;font-size:9px;font-weight:400;color:var(--text-muted);text-align:center">W</th>
+        <th style="padding:2px 3px;font-size:9px;font-weight:400;color:var(--text-muted);text-align:center">S</th>
+      </tr>`;
       return `<div style="margin-bottom:16px">
         <div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text-muted);margin-bottom:4px">GROUP ${g}</div>
-        <table style="border-collapse:collapse;width:100%;font-size:11px">${rows}</table>
+        <table style="border-collapse:collapse;width:100%;font-size:11px">${hdr}${rows}</table>
       </div>`;
     });
 
@@ -740,36 +748,40 @@ function renderScorecard() {
 
     const stageColour = rank => ["#475569","#3b82f6","#06b6d4","#f59e0b","#f97316","#22c55e","#fbbf24"][rank] || "#475569";
 
-    // Colour-code a probability value: 0% → muted grey, low → yellow, high → green
-    const pctColour = v => {
-      if (v == null || v === 0) return "#475569";
-      if (v < 0.05)  return "#ca8a04";  // yellow
-      if (v < 0.15)  return "#d97706";  // amber
-      if (v < 0.35)  return "#65a30d";  // yellow-green
-      return "#22c55e";                  // green
-    };
-    const pct = (v, col) => {
-      if (v == null) return `<span style="color:#475569">—</span>`;
-      const s = (v*100).toFixed(v >= 0.1 ? 1 : 2) + "%";
-      const c = col ? pctColour(v) : "#475569";
-      return `<span style="color:${c}">${s}</span>`;
+    // Map round keys to inRound keys for cell highlighting
+    const stageReached = {
+      r32:      team => inRound["R32"]?.has(team) || inRound["R16"]?.has(team) || inRound["QF"]?.has(team) || inRound["SF"]?.has(team) || inRound["Final"]?.has(team) || champion === team,
+      r16:      team => inRound["R16"]?.has(team) || inRound["QF"]?.has(team) || inRound["SF"]?.has(team) || inRound["Final"]?.has(team) || champion === team,
+      qf:       team => inRound["QF"]?.has(team) || inRound["SF"]?.has(team) || inRound["Final"]?.has(team) || champion === team,
+      sf:       team => inRound["SF"]?.has(team) || inRound["Final"]?.has(team) || champion === team,
+      final:    team => inRound["Final"]?.has(team) || champion === team,
+      champion: team => champion === team,
     };
 
+    const pct = (v, reached) => {
+      if (v == null) return { val: "—", bg: "transparent", colour: "#475569" };
+      const s = v >= 0.0095 ? (v*100).toFixed(v >= 0.1 ? 1 : 2) + "%" : v > 0 ? "<1%" : "—";
+      const colour = v === 0 ? "#475569" : reached ? "#22c55e" : "#94a3b8";
+      const bg     = reached ? "rgba(34,197,94,0.08)" : "transparent";
+      return { val: s, bg, colour };
+    };
+
+    const STAGE_KEYS = ["r32","r16","qf","sf","final","champion"];
     const koRows = allTeams.map((team, i) => {
       const p = preSim.teams[team] || {};
       const { label, rank } = stageLabel(team);
       const flag = TEAM_FLAGS[team] ? `<img src="https://flagcdn.com/w20/${TEAM_FLAGS[team]}.png" style="height:10px;margin-right:4px;vertical-align:middle">` : "";
       const grp = allMatches.find(m => /^[A-L]$/.test(m.group) && (m.home===team||m.away===team))?.group || "";
+      const cells = STAGE_KEYS.map(k => {
+        const reached = stageReached[k](team);
+        const { val, bg, colour } = pct(p[k], reached);
+        return `<td style="padding:4px 6px;text-align:center;font-size:10px;background:${bg}"><span style="color:${colour};font-weight:${reached?"600":"400"}">${val}</span></td>`;
+      }).join("");
       return `<tr style="border-bottom:1px solid #1e2a42">
         <td style="padding:4px 6px;text-align:right;color:var(--text-muted);font-size:10px">${i+1}</td>
         <td style="padding:4px 6px">${flag}<span style="font-size:11px">${team}</span></td>
         <td style="padding:4px 6px;text-align:center;font-size:10px;color:var(--text-muted)">${grp}</td>
-        <td style="padding:4px 6px;text-align:center;font-size:10px">${pct(p.r32, true)}</td>
-        <td style="padding:4px 6px;text-align:center;font-size:10px">${pct(p.r16, true)}</td>
-        <td style="padding:4px 6px;text-align:center;font-size:10px">${pct(p.qf, true)}</td>
-        <td style="padding:4px 6px;text-align:center;font-size:10px">${pct(p.sf, true)}</td>
-        <td style="padding:4px 6px;text-align:center;font-size:10px">${pct(p.final, true)}</td>
-        <td style="padding:4px 6px;text-align:center;font-size:10px">${pct(p.champion, true)}</td>
+        ${cells}
         <td style="padding:4px 8px;text-align:center">
           <span style="font-size:10px;font-weight:600;color:${stageColour(rank)};white-space:nowrap">${label}</span>
         </td>
@@ -777,6 +789,18 @@ function renderScorecard() {
     }).join("");
 
     const accuracy = `${totalCorrect}/${totalPlayed} (${(totalCorrect/totalPlayed*100).toFixed(1)}%)`;
+    const exactCorrect = groupSections.reduce((acc, _, gi) => {
+      const ms = allMatches.filter(m => m.group === GROUPS[gi]);
+      return acc + ms.filter(m => {
+        if (!m.score) return false;
+        const pred = predictMatch(m, params);
+        if (!pred) return false;
+        const hs = m.score.et_home ?? m.score.ft_home;
+        const as = m.score.et_away ?? m.score.ft_away;
+        return pred.best.homeGoals === hs && pred.best.awayGoals === as;
+      }).length;
+    }, 0);
+    const exactAccuracy = `${exactCorrect}/${totalPlayed} (${(exactCorrect/totalPlayed*100).toFixed(1)}%)`;
 
     el.innerHTML = `
       <div style="max-width:1100px;margin:0 auto">
@@ -802,7 +826,11 @@ function renderScorecard() {
         </div>
 
         <h3 style="font-size:13px;font-weight:700;color:var(--text);margin:0 0 4px">Group Stage: Predicted scoreline vs actual result</h3>
-        <p style="font-size:11px;color:var(--text-muted);margin:0 0 12px">Correct winner predicted <strong style="color:var(--text)">${accuracy}</strong> — predicted score (grey) → actual score (blue). <span style="color:#4ade80">✓</span>/<span style="color:#f87171">✗</span> outcome &nbsp;·&nbsp; <span style="color:#4ade80">✓</span>/<span style="color:#f87171">✗</span> exact score. Winner bold.</p>
+        <p style="font-size:11px;color:var(--text-muted);margin:0 0 12px">
+          Correct outcome (W/D/L): <strong style="color:var(--text)">${accuracy}</strong> &nbsp;·&nbsp;
+          Exact scoreline: <strong style="color:var(--text)">${exactAccuracy}</strong> &nbsp;—&nbsp;
+          predicted (grey) → actual (blue). W = outcome correct, S = exact score correct.
+        </p>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px 24px">
           ${groupSections.join("")}
         </div>
