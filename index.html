@@ -671,20 +671,26 @@ function renderScorecard() {
         const hs = m.score.et_home ?? m.score.ft_home;
         const as = m.score.et_away ?? m.score.ft_away;
         const ao = hs > as ? "H" : as > hs ? "A" : "D";
-        const hit = po === ao;
-        totalPlayed++; if (hit) totalCorrect++;
+        const outcomeHit = po === ao;
+        const predH = best.homeGoals, predA = best.awayGoals;
+        const scoreHit = predH === hs && predA === as;
+        totalPlayed++; if (outcomeHit) totalCorrect++;
         const flag = t => (TEAM_FLAGS[t] ? `<img src="https://flagcdn.com/w20/${TEAM_FLAGS[t]}.png" style="height:10px;margin-right:3px;vertical-align:middle">` : "");
         const hn = t => (t.length > 12 ? t.slice(0,11)+"…" : t);
-        const predScore = `${best.homeGoals}–${best.awayGoals}`;
+        const predScore = `${predH}–${predA}`;
         const actScore  = `${hs}–${as}`;
         const hw = ao === "H", aw = ao === "A";
+        // outcome verdict + score verdict
+        const oVerd = `<span style="color:${outcomeHit?"#4ade80":"#f87171"};font-size:11px">${outcomeHit?"✓":"✗"}</span>`;
+        const sVerd = `<span style="color:${scoreHit?"#4ade80":"#f87171"};font-size:11px">${scoreHit?"✓":"✗"}</span>`;
         return `<tr>
           <td style="text-align:right;padding:2px 4px">${flag(m.home)}<span style="${hw?"font-weight:600;color:var(--text)":"color:var(--text-muted)"}">${hn(m.home)}</span></td>
-          <td style="text-align:center;padding:2px 6px;font-size:10px;color:var(--text-muted)">${predScore}</td>
-          <td style="text-align:center;padding:2px 4px;font-size:10px;color:#475569">→</td>
-          <td style="text-align:center;padding:2px 6px;font-weight:600;color:${hit?"#4ade80":"#f87171"}">${actScore}</td>
+          <td style="text-align:center;padding:2px 4px;font-size:10px;color:var(--text-muted)">${predScore}</td>
+          <td style="text-align:center;padding:2px 2px;font-size:10px;color:#475569">→</td>
+          <td style="text-align:center;padding:2px 4px;font-size:10px;color:#7dd3fc;font-weight:600">${actScore}</td>
           <td style="padding:2px 4px">${flag(m.away)}<span style="${aw?"font-weight:600;color:var(--text)":"color:var(--text-muted)"}">${hn(m.away)}</span></td>
-          <td style="text-align:center;padding:2px 6px;font-size:11px">${hit?"✓":"✗"}</td>
+          <td style="text-align:center;padding:2px 3px">${oVerd}</td>
+          <td style="text-align:center;padding:2px 3px">${sVerd}</td>
         </tr>`;
       }).filter(Boolean).join("");
       return `<div style="margin-bottom:16px">
@@ -725,11 +731,29 @@ function renderScorecard() {
       allMatches.filter(m => /^[A-L]$/.test(m.group)).flatMap(m => [m.home, m.away])
     )];
 
-    // Sort by pre-tournament champion probability descending
-    allTeams.sort((a, b) => (preSim.teams[b]?.champion ?? 0) - (preSim.teams[a]?.champion ?? 0));
+    // Sort by actual stage reached (desc), then pre-tournament champion% (desc)
+    allTeams.sort((a, b) => {
+      const ra = stageLabel(a).rank, rb = stageLabel(b).rank;
+      if (rb !== ra) return rb - ra;
+      return (preSim.teams[b]?.champion ?? 0) - (preSim.teams[a]?.champion ?? 0);
+    });
 
     const stageColour = rank => ["#475569","#3b82f6","#06b6d4","#f59e0b","#f97316","#22c55e","#fbbf24"][rank] || "#475569";
-    const pct = v => v == null ? "—" : (v*100).toFixed(v >= 0.1 ? 1 : 2) + "%";
+
+    // Colour-code a probability value: 0% → muted grey, low → yellow, high → green
+    const pctColour = v => {
+      if (v == null || v === 0) return "#475569";
+      if (v < 0.05)  return "#ca8a04";  // yellow
+      if (v < 0.15)  return "#d97706";  // amber
+      if (v < 0.35)  return "#65a30d";  // yellow-green
+      return "#22c55e";                  // green
+    };
+    const pct = (v, col) => {
+      if (v == null) return `<span style="color:#475569">—</span>`;
+      const s = (v*100).toFixed(v >= 0.1 ? 1 : 2) + "%";
+      const c = col ? pctColour(v) : "#475569";
+      return `<span style="color:${c}">${s}</span>`;
+    };
 
     const koRows = allTeams.map((team, i) => {
       const p = preSim.teams[team] || {};
@@ -740,12 +764,12 @@ function renderScorecard() {
         <td style="padding:4px 6px;text-align:right;color:var(--text-muted);font-size:10px">${i+1}</td>
         <td style="padding:4px 6px">${flag}<span style="font-size:11px">${team}</span></td>
         <td style="padding:4px 6px;text-align:center;font-size:10px;color:var(--text-muted)">${grp}</td>
-        <td style="padding:4px 6px;text-align:center;font-size:10px;color:#94a3b8">${pct(p.r32)}</td>
-        <td style="padding:4px 6px;text-align:center;font-size:10px;color:#94a3b8">${pct(p.r16)}</td>
-        <td style="padding:4px 6px;text-align:center;font-size:10px;color:#94a3b8">${pct(p.qf)}</td>
-        <td style="padding:4px 6px;text-align:center;font-size:10px;color:#94a3b8">${pct(p.sf)}</td>
-        <td style="padding:4px 6px;text-align:center;font-size:10px;color:#94a3b8">${pct(p.final)}</td>
-        <td style="padding:4px 6px;text-align:center;font-size:10px;color:#94a3b8">${pct(p.champion)}</td>
+        <td style="padding:4px 6px;text-align:center;font-size:10px">${pct(p.r32, true)}</td>
+        <td style="padding:4px 6px;text-align:center;font-size:10px">${pct(p.r16, true)}</td>
+        <td style="padding:4px 6px;text-align:center;font-size:10px">${pct(p.qf, true)}</td>
+        <td style="padding:4px 6px;text-align:center;font-size:10px">${pct(p.sf, true)}</td>
+        <td style="padding:4px 6px;text-align:center;font-size:10px">${pct(p.final, true)}</td>
+        <td style="padding:4px 6px;text-align:center;font-size:10px">${pct(p.champion, true)}</td>
         <td style="padding:4px 8px;text-align:center">
           <span style="font-size:10px;font-weight:600;color:${stageColour(rank)};white-space:nowrap">${label}</span>
         </td>
@@ -778,7 +802,7 @@ function renderScorecard() {
         </div>
 
         <h3 style="font-size:13px;font-weight:700;color:var(--text);margin:0 0 4px">Group Stage: Predicted scoreline vs actual result</h3>
-        <p style="font-size:11px;color:var(--text-muted);margin:0 0 12px">Correct winner predicted: <strong style="color:var(--text)">${accuracy}</strong> — predicted score shown left of arrow, actual right. Winner bold.</p>
+        <p style="font-size:11px;color:var(--text-muted);margin:0 0 12px">Correct winner predicted <strong style="color:var(--text)">${accuracy}</strong> — predicted score (grey) → actual score (blue). <span style="color:#4ade80">✓</span>/<span style="color:#f87171">✗</span> outcome &nbsp;·&nbsp; <span style="color:#4ade80">✓</span>/<span style="color:#f87171">✗</span> exact score. Winner bold.</p>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px 24px">
           ${groupSections.join("")}
         </div>
